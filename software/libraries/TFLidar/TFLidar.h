@@ -19,9 +19,9 @@ private:
     RollingAverage strength;
 
 public:
-    TFLidar(uint8_t rx, uint8_t tx, long baudrate, uint64_t capacity);
+    TFLidar(uint8_t rx, uint8_t tx, uint64_t capacity);
 
-    void     start();
+    void     begin();
     TFStatus measure();
     uint64_t getDistance();
     uint64_t getStrength();

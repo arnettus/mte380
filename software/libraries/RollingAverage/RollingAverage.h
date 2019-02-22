@@ -8,8 +8,8 @@ class RollingAverage {
 private:
     uint64_t *values;
     uint64_t capacity;
-    uint64_t currentSum;
-    uint64_t currentNumberOfEntries;
+    volatile uint64_t currentSum;
+    volatile uint64_t currentNumberOfEntries;
     int currentIndex;
 
 public:

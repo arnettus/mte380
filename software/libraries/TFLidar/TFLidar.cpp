@@ -9,9 +9,9 @@ const long TF_BAUDRATE       = 115200;
 const int  TF_HEADER         = 0x59;
 const int  TF_PACKET_LENGTH  = 9;
 
-TFLidar::TFLidar(uint8_t rx, uint8_t tx, long baudrate, uint64_t capacity) : serial(rx, tx), distance(capacity), strength(capacity) {};
+TFLidar::TFLidar(uint8_t rx, uint8_t tx, uint64_t capacity) : serial(rx, tx), distance(capacity), strength(capacity) {};
 
-void TFLidar::start() {
+void TFLidar::begin() {
     serial.begin(TF_BAUDRATE);
 }
 
