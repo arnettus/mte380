@@ -3,7 +3,7 @@
 TFLidar lidar(19, 18, 8);
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
     lidar.begin();
 
     OCR0A = 0x3F;   // approximately 4x a ms
