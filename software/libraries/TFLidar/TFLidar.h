@@ -2,6 +2,7 @@
 #define TFLIDAR_H
 
 #include <stdio.h>
+#include <Arduino.h>
 #include <RollingAverage.h>
 
 enum TFStatus {
@@ -14,13 +15,14 @@ enum TFStatus {
 // Uses Serial1 on the Mega
 class TFLidar {
 private:
+    HardwareSerial *serial;
     RollingAverage distance;
     RollingAverage strength;
 
 public:
     volatile unsigned long timestamp;
 
-    TFLidar(uint64_t capacity);
+    TFLidar(HardwareSerial *s, uint64_t capacity);
 
     void     begin();
     TFStatus measure();

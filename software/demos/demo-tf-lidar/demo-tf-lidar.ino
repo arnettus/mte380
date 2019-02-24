@@ -1,6 +1,6 @@
 #include <TFLidar.h>
 
-TFLidar lidar(8); // takes Serial1 on the Mega
+TFLidar lidar(&Serial1, 8); // takes Serial1 on the Mega
 
 void setup() {
     Serial.begin(9600);
