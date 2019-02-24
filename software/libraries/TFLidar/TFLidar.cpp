@@ -13,17 +13,21 @@ const uint64_t MIN_DISTANCE = 0;
 const long MAX_DISTANCE = 500;
 
 // Assumes the raw distance values ranges from 0 to 0xffff
-inline uint64_t rawToDistance(uint64_t val) {
+inline uint16_t rawToDistance(uint16_t val) {
     return (val * (MAX_DISTANCE - MIN_DISTANCE) / 0xffff) + MIN_DISTANCE;
 }
 
-TFLidar::TFLidar(HardwareSerial *s, uint64_t capacity) : serial(s), distance(capacity), strength(capacity) {};
+TFLidar::TFLidar(int capacity) : serial(NULL), distance(capacity), strength(capacity) {};
 
-void TFLidar::begin() {
-    serial->begin(TF_BAUDRATE);
+void TFLidar::begin(HardwareSerial *s) {
+    s->begin(TF_BAUDRATE);
+    serial = s;
 }
 
 TFStatus TFLidar::measure() {
+    if (serial == NULL)
+        return TF_STATUS_NOT_CONNECTED;
+
     if (!serial->available())
         return TF_STATUS_ERROR_NO_DATA;
 
@@ -60,14 +64,29 @@ TFStatus TFLidar::measure() {
     return TF_STATUS_ERROR_NO_HEADER;
 }
 
-uint64_t TFLidar::getDistance() const {
+uint16_t TFLidar::getDistance() const {
     return rawToDistance(distance.read());
 }
 
-uint64_t TFLidar::getDistanceRaw() const {
+uint16_t TFLidar::getDistanceRaw() const {
     return distance.read();
 }
 
-uint64_t TFLidar::getStrength() const {
+uint16_t TFLidar::getStrength() const {
     return strength.read();
+}
+
+unsigned long TFLidar::getTimestamp() {
+    return timestamp;
+}
+
+void TFLidar::printLatest(HardwareSerial *s, bool useRawValues) const {
+    if (s == NULL)
+        return;
+
+    s->print("Distance: ");
+    useRawValues ? s->print(rawToDistance(distance.read())) : s->print(distance.read());
+
+    s->print("Strength: ");
+    s->println(strength.read());
 }

@@ -1,2 +1,2 @@
-g++ -o test-rolling-average test-rolling-average.cpp ../../libraries/RollingAverage/RollingAverage.cpp 
+g++ -D NON_ARDUINO -o test-rolling-average test-rolling-average.cpp
 ./test-rolling-average

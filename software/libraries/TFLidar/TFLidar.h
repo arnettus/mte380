@@ -10,25 +10,26 @@ enum TFStatus {
     TF_STATUS_ERROR_NO_DATA,
     TF_STATUS_ERROR_NO_HEADER,
     TF_STATUS_ERROR_BAD_CHECKSUM,
+    TF_STATUS_NOT_CONNECTED,
 };
 
-// Uses Serial1 on the Mega
 class TFLidar {
 private:
     HardwareSerial *serial;
-    RollingAverage distance;
-    RollingAverage strength;
+    RollingAverage<uint16_t> distance;
+    RollingAverage<uint16_t> strength;
+    unsigned long timestamp;
 
 public:
-    volatile unsigned long timestamp;
+    TFLidar(int capacity);
 
-    TFLidar(HardwareSerial *s, uint64_t capacity);
-
-    void     begin();
+    void     begin(HardwareSerial *s);
     TFStatus measure();
-    uint64_t getDistance() const;
-    uint64_t getDistanceRaw() const;
-    uint64_t getStrength() const;
+    uint16_t getDistance() const;
+    uint16_t getDistanceRaw() const;
+    uint16_t getStrength() const;
+    unsigned long getTimestamp();
+    void printLatest(HardwareSerial *s, bool useRawValues) const;
 };
 
 #endif
