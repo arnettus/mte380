@@ -2,7 +2,6 @@
 #define TFLIDAR_H
 
 #include <stdio.h>
-#include <SoftwareSerial.h>
 #include <RollingAverage.h>
 
 enum TFStatus {
@@ -12,16 +11,16 @@ enum TFStatus {
     TF_STATUS_ERROR_BAD_CHECKSUM,
 };
 
+// Uses Serial1 on the Mega
 class TFLidar {
 private:
-    SoftwareSerial serial;
     RollingAverage distance;
     RollingAverage strength;
 
 public:
     volatile unsigned long timestamp;
 
-    TFLidar(uint8_t rx, uint8_t tx, uint64_t capacity);
+    TFLidar(uint64_t capacity);
 
     void     begin();
     TFStatus measure();
