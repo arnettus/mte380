@@ -1,6 +1,6 @@
 #include <TFLidar.h>
 
-TFLidar lidar(19, 18, 8);
+TFLidar lidar(15, 14, 8);
 
 void setup() {
     Serial.begin(9600);
@@ -15,7 +15,7 @@ ISR(TIMER0_COMPA_vect) {
     TFStatus st = lidar.measure();
 
     if (st == TF_STATUS_OKAY) {
-        snprintf(msg, 128, "Distance: %llu, Strength: %llu\n\n", lidar.getDistance(), lidar.getStrength());
+        snprintf(msg, 128, "Distance: %llu, Strength: %llu\n\n", lidar.getDistanceRaw(), lidar.getStrength());
         Serial.print(msg);
     } else {
         snprintf(msg, 128, "Error code: %d\n\n", st);
