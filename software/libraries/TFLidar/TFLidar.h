@@ -19,12 +19,15 @@ private:
     RollingAverage strength;
 
 public:
+    volatile unsigned long timestamp;
+
     TFLidar(uint8_t rx, uint8_t tx, uint64_t capacity);
 
     void     begin();
     TFStatus measure();
-    uint64_t getDistance();
-    uint64_t getStrength();
+    uint64_t getDistance() const;
+    uint64_t getDistanceRaw() const;
+    uint64_t getStrength() const;
 };
 
 #endif
