@@ -5,7 +5,7 @@
 
 #include "TFLidar.h"
 
-const int TF_BAUDRATE       = 115200;
+const long TF_BAUDRATE       = 115200;
 const int TF_HEADER         = 0x59;
 const int TF_PACKET_LENGTH  = 9;
 
@@ -20,8 +20,8 @@ inline uint16_t rawToDistance(uint16_t val) {
 TFLidar::TFLidar(int capacity) : serial(NULL), distance(capacity), strength(capacity) {};
 
 void TFLidar::begin(HardwareSerial *s) {
-    s->begin(TF_BAUDRATE);
     serial = s;
+    serial->begin(TF_BAUDRATE);
 }
 
 TFStatus TFLidar::measure() {
@@ -85,7 +85,7 @@ void TFLidar::printLatest(HardwareSerial *s, bool useRawValues) const {
         return;
 
     s->print("Distance: ");
-    useRawValues ? s->print(rawToDistance(distance.read())) : s->print(distance.read());
+    useRawValues ? s->print(distance.read()) : s->print(rawToDistance(distance.read()));
 
     s->print("Strength: ");
     s->println(strength.read());
