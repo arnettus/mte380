@@ -1,0 +1,41 @@
+BROWN = (255, 221, 153)
+BLUE = (0, 0, 255)
+YELLOW = (204, 204, 0)
+SLATE = (105,105,105)
+OLIVE = (85,107,47)
+MAROON = (128,0,0)
+MEDPURPLE = (147,112,219)
+AQUA = (126, 186, 181)
+
+FLAT = "FLAT"
+GRAV = "GRAVEL"
+SAND = "SAND"
+WATE = "WATER"
+FOOD = "FOOD"
+MIS1 = "CANDLE"
+MIS2 = "GROUP"
+MIS3 = "PERSON"
+
+colours = {
+    FLAT: BROWN,
+    GRAV: SLATE,
+    WATE: BLUE,
+    SAND: YELLOW,
+    FOOD: OLIVE,
+    MIS1: MAROON,
+    MIS2: MEDPURPLE,
+    MIS3: AQUA
+}
+
+tile_map = [
+    [SAND, MIS3, FLAT, SAND, MIS2, FLAT],
+    [FLAT, WATE, FLAT, FLAT, FOOD, WATE],
+    [FLAT, FLAT, GRAV, FLAT, FLAT, FLAT],
+    [SAND, FLAT, FLAT, WATE, FLAT, GRAV],
+    [MIS1, FLAT, FLAT, FLAT, SAND, FLAT],
+    [FLAT, GRAV, FLAT, FLAT, GRAV, FLAT]
+]
+
+tile_size = 60
+map_length = 6
+map_width = 6
