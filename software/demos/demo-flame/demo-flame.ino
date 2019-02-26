@@ -44,14 +44,21 @@ void demoLocate() {
     }
 }
 
+volatile bool pollMe = false;
+
 ISR(TIMER0_COMPA_vect) {
-    demoReadValue(true);
-    //demoReadValue(false);
-    //demoDistanceValue(true);
-    //demoDistanceValue(false);
-    //demoLocate();
+    if (!pollMe)
+        pollMe = true;
+
 }
 
 void loop() {
-
+    if (pollMe) {
+        pollMe = false;
+        demoReadValue(true);
+        //demoReadValue(false);
+        //demoDistanceValue(true);
+        //demoDistanceValue(false);
+        //demoLocate();
+    }
 }
