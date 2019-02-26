@@ -1,11 +1,17 @@
-BROWN = (255, 221, 153)
-BLUE = (0, 0, 255)
-YELLOW = (204, 204, 0)
-SLATE = (105,105,105)
-OLIVE = (85,107,47)
-MAROON = (128,0,0)
-MEDPURPLE = (147,112,219)
-AQUA = (126, 186, 181)
+import pygame
+from pygame.locals import *
+
+tile_size = 60
+map_length = 6
+map_width = 6
+offset = 7
+
+pygame.display.set_caption("Kowloon: Walled City")
+
+pygame.init()
+display_surf = pygame.display.set_mode(((map_width*2+1)*tile_size, map_length*tile_size))
+
+blank = pygame.image.load('images/blank.png').convert_alpha()
 
 FLAT = "FLAT"
 GRAV = "GRAVEL"
@@ -17,14 +23,14 @@ MIS2 = "GROUP"
 MIS3 = "PERSON"
 
 colours = {
-    FLAT: BROWN,
-    GRAV: SLATE,
-    WATE: BLUE,
-    SAND: YELLOW,
-    FOOD: OLIVE,
-    MIS1: MAROON,
-    MIS2: MEDPURPLE,
-    MIS3: AQUA
+    FLAT: pygame.image.load('images/flat.png').convert_alpha(),
+    GRAV: pygame.image.load('images/gravel.png').convert_alpha(),
+    WATE: pygame.image.load('images/water.png').convert_alpha(),
+    SAND: pygame.image.load('images/sand.png').convert_alpha(),
+    FOOD: pygame.image.load('images/food.png').convert_alpha(),
+    MIS1: pygame.image.load('images/fire.png').convert_alpha(),
+    MIS2: pygame.image.load('images/group.png').convert_alpha(),
+    MIS3: pygame.image.load('images/person.png').convert_alpha()
 }
 
 tile_map = [
@@ -35,7 +41,3 @@ tile_map = [
     [MIS1, FLAT, FLAT, FLAT, SAND, FLAT],
     [FLAT, GRAV, FLAT, FLAT, GRAV, FLAT]
 ]
-
-tile_size = 60
-map_length = 6
-map_width = 6
