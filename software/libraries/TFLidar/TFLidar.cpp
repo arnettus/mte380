@@ -86,6 +86,7 @@ void TFLidar::printLatest(HardwareSerial *s, bool useRawValues) const {
 
     s->print("Distance: ");
     useRawValues ? s->print(distance.read()) : s->print(rawToDistance(distance.read()));
+	s->print(", ");
 
     s->print("Strength: ");
     s->println(strength.read());
