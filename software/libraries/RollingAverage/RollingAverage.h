@@ -1,25 +1,77 @@
 #ifndef ROLLING_AVERAGE_H
 #define ROLLING_AVERAGE_H
 
-#include <stdio.h>
-#include <stdint.h>
+#include <string.h>
 
+#ifdef NON_ARDUINO
+#include <iostream>
+#endif
+
+template <typename T>
 class RollingAverage {
 private:
-    uint64_t *values;
-    uint64_t capacity;
-    volatile uint64_t currentSum;
-    volatile uint64_t currentNumberOfEntries;
+    T *values;
+    int capacity;
     int currentIndex;
+    volatile T currentSum;
+    volatile int currentNumberOfEntries;
+    volatile unsigned long timestamp;
 
 public:
-    RollingAverage(uint64_t _capacity);
-    ~RollingAverage();
+    RollingAverage(int _capacity) : capacity(_capacity), currentSum(0), currentIndex(0), currentNumberOfEntries(0) {
+        values = new T[_capacity];
+        memset(values, 0, sizeof(T) * _capacity);
+    }
 
-    uint64_t read();
-    void add(uint64_t value);
-    void reset(uint64_t newCapacity); // pass in 0 to keep the current capacity
-    void print();
+    ~RollingAverage() {
+        delete [] values;
+    }
+
+    T read() {
+        return currentNumberOfEntries ? (currentSum + (currentNumberOfEntries / 2)) / currentNumberOfEntries : 0;
+    }
+
+    void add(T value) {
+        currentSum -= values[currentIndex];
+        currentSum += value;
+        values[currentIndex] = value;
+        currentIndex = (currentIndex + 1) % capacity;
+
+        if (currentNumberOfEntries < capacity)
+            currentNumberOfEntries++;
+    }
+
+    void reset() {
+        memset(values, 0, sizeof(T) * capacity);
+        currentSum = 0;
+        currentIndex = 0;
+        currentNumberOfEntries = 0;
+    }
+
+    void reset(int newCapacity) {
+        if (newCapacity) {
+            delete [] values;
+            values = new T[newCapacity];
+            capacity = newCapacity;
+        }
+
+        memset(values, 0, sizeof(T) * capacity);
+        currentSum = 0;
+        currentIndex = 0;
+        currentNumberOfEntries = 0;
+
+    }
+
+#ifdef NON_ARDUINO
+    void print() {
+        std::cout << "Values: ";
+        for (int i = 0; i < capacity - 1; i++)
+            std::cout << values[i] << ", ";
+        std::cout << values[capacity - 1] << std::endl;
+
+        std::cout << "Average: " << read() << " [" << currentSum << "/" << currentNumberOfEntries << "]"<< std::endl;
+    }
+#endif
+
 };
-
 #endif
