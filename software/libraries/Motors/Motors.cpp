@@ -1,6 +1,6 @@
 //  Motors.cpp - Library for Cytron quad-drive
 #define ENCODER_OPTIMIZE_INTERRUPTS
-#include "../Encoder/Encoder.h"
+#include "src/Encoder/Encoder.h"
 #include "Arduino.h"
 #include "Motors.h"
 
@@ -119,7 +119,7 @@ void Motors::Halt(){
     }
 }
 
-void Motors::TurnLeft(){
+void Motors::TurnRight(){
     if(!_busy){
         // Take the lock
         _busy = true;
@@ -132,7 +132,7 @@ void Motors::TurnLeft(){
     }
 }
 
-void Motors::TurnRight(){
+void Motors::TurnLeft(){
     if(!_busy){
         // Take the lock
         _busy = true;
