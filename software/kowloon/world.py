@@ -28,17 +28,20 @@ def run(robot):
     fpsClock = pygame.time.Clock()
     pygame.display.update()
     old_pos = robot.pos
-    new_pos = [robot.pos[0], robot.pos[1] - 1]
+    new_pos = (2, 0)
+    p = robot.plan_path(old_pos, new_pos)
 
+    print(p)
     while True:
-        travel(robot, old_pos, new_pos)
-        robot.travel(old_pos, new_pos)
+        if len(p):
+            coordinate = p.pop()
+            robot.travel(robot.pos, coordinate)
 
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
 
-        pygame.time.wait(1000)
+        pygame.time.wait(500)
         pygame.display.update()
         # add pygame.clock right here

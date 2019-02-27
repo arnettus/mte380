@@ -21,8 +21,10 @@ FOOD = "FOOD"
 MIS1 = "CANDLE"
 MIS2 = "GROUP"
 MIS3 = "PERSON"
+BLAN = "BLANK"
 
 colours = {
+    BLAN: pygame.image.load('images/blank.png').convert_alpha(),
     FLAT: pygame.image.load('images/flat.png').convert_alpha(),
     GRAV: pygame.image.load('images/gravel.png').convert_alpha(),
     WATE: pygame.image.load('images/water.png').convert_alpha(),
