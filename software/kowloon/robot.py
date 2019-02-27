@@ -36,10 +36,6 @@ class Robot(object):
         # check square in front of you, along the path that you get from astar
         pass
 
-    def aStar(self, goal):
-        # return a list of coordiantes
-        pass
-
     def travel(self, old, coordinate):
         # use blank to blit for nowwww but replace with the
         # coordinate that you saw or whatever, like do some detection
