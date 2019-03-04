@@ -1,6 +1,6 @@
 //  Motors.cpp - Library for Cytron quad-drive
 #define ENCODER_OPTIMIZE_INTERRUPTS
-#include "src/Encoder/Encoder.h"
+#include "Encoder.h"
 #include "Arduino.h"
 #include "Motors.h"
 
@@ -22,47 +22,47 @@
 #define M2_ENCB 21
 
 // ================================== Motor 1 ==================================
-void Motors::_DriveFrontLeftFWD(){
+void Motors::_DriveFrontRightFWD(int val = 58){
     digitalWrite(M1_DIR, LOW); // CCW rotation, left motor goes FWD
-    analogWrite(M1_EN, 58);
+    analogWrite(M1_EN, val);
 }
 
-void Motors::_DriveFrontLeftREV(){
+void Motors::_DriveFrontRightREV(int val = 56){
     digitalWrite(M1_DIR, HIGH); // CW rotation, left motor goes REV
-    analogWrite(M1_EN, 56);
+    analogWrite(M1_EN, val);
 }
 
 // ================================== Motor 2 ==================================
-void Motors::_DriveFrontRightFWD(){
+void Motors::_DriveFrontLeftFWD(int val = 60){
     digitalWrite(M2_DIR, HIGH); // CW rotation, right motor goes FWD
-    analogWrite(M2_EN, 60);
+    analogWrite(M2_EN, val);
 }
 
-void Motors::_DriveFrontRightREV(){
+void Motors::_DriveFrontLeftREV(int val = 60){
     digitalWrite(M2_DIR, LOW); // CCW rotation, right motor goes REV
-    analogWrite(M2_EN, 60);
+    analogWrite(M2_EN, val);
 }
 
 // ================================== Motor 3 ==================================
-void Motors::_DriveRearLeftFWD(){
+void Motors::_DriveRearRightREV(int val = 64){
     digitalWrite(M3_DIR, LOW); // CCW rotation, left motor goes FWD
-    analogWrite(M3_EN, 64);
+    analogWrite(M3_EN, val);
 }
 
-void Motors::_DriveRearLeftREV(){
+void Motors::_DriveRearRightFWD(int val = 66){
     digitalWrite(M3_DIR, HIGH); // CW rotation, left motor goes REV
-    analogWrite(M3_EN, 66);
+    analogWrite(M3_EN, val);
 }
 
 // ================================== Motor 4 ==================================
-void Motors::_DriveRearRightFWD(){
+void Motors::_DriveRearLeftREV(int val = 63){
     digitalWrite(M4_DIR, HIGH); // CW rotation, right motor goes FWD
-    analogWrite(M4_EN, 63);
+    analogWrite(M4_EN, val);
 }
 
-void Motors::_DriveRearRightREV(){
+void Motors::_DriveRearLeftFWD(int val = 66){
     digitalWrite(M4_DIR, LOW); // CCW rotation, right motor goes REV
-    analogWrite(M4_EN, 66);
+    analogWrite(M4_EN, val);
 }
 
 Motors::Motors(): _m1Enc(M1_ENCA, M1_ENCB), _m2Enc(M2_ENCA, M2_ENCB){
@@ -124,11 +124,11 @@ void Motors::TurnRight(){
         // Take the lock
         _busy = true;
         // Left side motors FWD
-        Motors::_DriveFrontLeftREV();
-        Motors::_DriveRearLeftREV();
-        // // Right side motors REV
-        Motors::_DriveFrontRightFWD();
-        Motors::_DriveRearRightFWD();
+        Motors::_DriveFrontLeftREV(90);
+        Motors::_DriveRearLeftREV(90);
+        // Right side motors REV
+        Motors::_DriveFrontRightFWD(90);
+        Motors::_DriveRearRightFWD(90);
     }
 }
 
@@ -137,11 +137,11 @@ void Motors::TurnLeft(){
         // Take the lock
         _busy = true;
         // Left side motors FWD
-        Motors::_DriveFrontLeftFWD();
-        Motors::_DriveRearLeftFWD();
+        Motors::_DriveFrontLeftFWD(90);
+        Motors::_DriveRearLeftFWD(90);
         // Right side motors REV
-        Motors::_DriveFrontRightREV();
-        Motors::_DriveRearRightREV();
+        Motors::_DriveFrontRightREV(90);
+        Motors::_DriveRearRightREV(90);
     }
 }
 
