@@ -2,7 +2,7 @@
 #define Motors_h
 
 #include "Arduino.h"
-#include "src/Encoder/Encoder.h"
+#include "Encoder.h"
 
 class Motors
 {
@@ -17,18 +17,18 @@ class Motors
         void SetMotor1Enc(int val);
         int GetMotor2Enc();
         void SetMotor2Enc(int val);
-    private:
+    //private:
         Encoder _m1Enc;
         Encoder _m2Enc;
         bool _busy;
-        void _DriveFrontLeftFWD();
-        void _DriveFrontLeftREV();
-        void _DriveFrontRightFWD();
-        void _DriveFrontRightREV();
-        void _DriveRearLeftFWD();
-        void _DriveRearLeftREV();
-        void _DriveRearRightFWD();
-        void _DriveRearRightREV();
+        void _DriveFrontLeftFWD(int val);
+        void _DriveFrontLeftREV(int val);
+        void _DriveFrontRightFWD(int val);
+        void _DriveFrontRightREV(int val);
+        void _DriveRearLeftFWD(int val);
+        void _DriveRearLeftREV(int val);
+        void _DriveRearRightFWD(int val);
+        void _DriveRearRightREV(int val);
 };
 
 #endif
