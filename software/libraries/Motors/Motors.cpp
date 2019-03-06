@@ -137,6 +137,32 @@ void Motors::TurnLeft(){
         // Take the lock
         _busy = true;
         // Left side motors FWD
+        Motors::_DriveFrontLeftFWD(80);
+        Motors::_DriveRearLeftFWD(80);
+        // Right side motors REV
+        Motors::_DriveFrontRightREV(80);
+        Motors::_DriveRearRightREV(80);
+    }
+}
+
+void Motors::TurnRightSlowly(){
+    if(!_busy){
+        // Take the lock
+        _busy = true;
+        // Left side motors FWD
+        Motors::_DriveFrontLeftREV(80);
+        Motors::_DriveRearLeftREV(80);
+        // Right side motors REV
+        Motors::_DriveFrontRightFWD(80);
+        Motors::_DriveRearRightFWD(80);
+    }
+}
+
+void Motors::TurnLeftSlowly(){
+    if(!_busy){
+        // Take the lock
+        _busy = true;
+        // Left side motors FWD
         Motors::_DriveFrontLeftFWD(90);
         Motors::_DriveRearLeftFWD(90);
         // Right side motors REV

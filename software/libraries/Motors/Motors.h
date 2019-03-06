@@ -12,12 +12,14 @@ class Motors
         void DriveRev();
         void TurnRight();
         void TurnLeft();
+        void TurnRightSlowly();
+        void TurnLeftSlowly();
         void Halt();
         int GetMotor1Enc();
         void SetMotor1Enc(int val);
         int GetMotor2Enc();
         void SetMotor2Enc(int val);
-    //private:
+    private:
         Encoder _m1Enc;
         Encoder _m2Enc;
         bool _busy;
