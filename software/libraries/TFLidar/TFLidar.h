@@ -26,10 +26,9 @@ public:
     void     begin(HardwareSerial *s);
     TFStatus measure();
     uint16_t getDistance() const;
-    uint16_t getDistanceRaw() const;
     uint16_t getStrength() const;
     unsigned long getTimestamp();
-    void printLatest(HardwareSerial *s, bool useRawValues) const;
+    void printLatest(HardwareSerial *s) const;
 };
 
 #endif

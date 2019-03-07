@@ -9,14 +9,6 @@ const long TF_BAUDRATE       = 115200;
 const int TF_HEADER         = 0x59;
 const int TF_PACKET_LENGTH  = 9;
 
-const uint64_t MIN_DISTANCE = 0;
-const long MAX_DISTANCE = 500;
-
-// Assumes the raw distance values ranges from 0 to 0xffff
-inline uint16_t rawToDistance(uint16_t val) {
-    return (val * (MAX_DISTANCE - MIN_DISTANCE) / 0xffff) + MIN_DISTANCE;
-}
-
 TFLidar::TFLidar(int capacity) : serial(NULL), distance(capacity), strength(capacity) {};
 
 void TFLidar::begin(HardwareSerial *s) {
@@ -65,10 +57,6 @@ TFStatus TFLidar::measure() {
 }
 
 uint16_t TFLidar::getDistance() const {
-    return rawToDistance(distance.read());
-}
-
-uint16_t TFLidar::getDistanceRaw() const {
     return distance.read();
 }
 
@@ -80,12 +68,12 @@ unsigned long TFLidar::getTimestamp() {
     return timestamp;
 }
 
-void TFLidar::printLatest(HardwareSerial *s, bool useRawValues) const {
+void TFLidar::printLatest(HardwareSerial *s) const {
     if (s == NULL)
         return;
 
     s->print("Distance: ");
-    useRawValues ? s->print(distance.read()) : s->print(rawToDistance(distance.read()));
+    s->print(distance.read());
 	s->print(", ");
 
     s->print("Strength: ");
