@@ -10,11 +10,15 @@ class Motors
         Motors();
         void DriveFwd();
         void DriveRev();
-        void TurnRight();
         void TurnLeft();
+        void TurnRight();
         void TurnRightSlowly();
         void TurnLeftSlowly();
         void Halt();
+        void TurnRightSand();
+        void TurnLeftSand();
+        void OLTurnLeft90();
+        void OLTurnRight90();
         int GetMotor1Enc();
         void SetMotor1Enc(int val);
         int GetMotor2Enc();
