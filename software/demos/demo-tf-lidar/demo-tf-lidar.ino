@@ -27,6 +27,6 @@ void loop() {
         } else if (st != TF_STATUS_ERROR_BAD_CHECKSUM) {
             Serial.print("Error code: ");
             Serial.println(st);
-        }       
+        }
     }
 }
