@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 const int IN_RANGE = 1000;
-const int TOL = 100;
+const int TOL = 400;
 
 Flame::Flame(int _leftPin, int _rightPin) : leftPin(_leftPin), rightPin(_rightPin) {}
 
