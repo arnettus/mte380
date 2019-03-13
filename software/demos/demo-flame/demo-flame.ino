@@ -5,24 +5,24 @@ Flame flame(A0, A1);
 
 void setup() {
     Serial.begin(9600);
-
-    OCR0A = 0x3F;   // approximately 4x a ms
-    TIMSK0 |= _BV(OCIE0A);
 }
 
-void demoReadValue(bool useLeft) {
-    Serial.print(flame.readValue(useLeft));
-}
-
-void demoReadDistance(bool useLeft) {
-    Serial.print(flame.readDistance(useLeft));
+void demoReadValue() {
+    int l = flame.readValue(true);
+    int r = flame.readValue(false);
+    
+    Serial.print("Left: ");
+    Serial.print(l);
+    Serial.print(", Right: ");
+    Serial.print(r);
+    Serial.print(", diff: ");
+    Serial.println(abs(l-r));
 }
 
 void demoLocate() {
-    char msg[128];
-    FlameLocation fl = flame.locate();
+    FlameStatus fs = flame.locate();
 
-    switch (fl.status) {
+    switch (fs) {
         case FLAME_NOT_FOUND:
             Serial.print("Flame not found\n");
             break;
@@ -33,32 +33,16 @@ void demoLocate() {
             Serial.print("Flame right\n");
             break;
         case FLAME_IS_CENTERED:
-            snprintf(msg, 128, "Flame is centered: %d\n", fl.distance);
-            Serial.print(msg);
-            break;
-        case FLAME_IS_EXTINGUISHABLE:
-            snprintf(msg, 128, "Flame is extinguishable: %d\n", fl.distance);
+            Serial.print("Flame is centered\n");
             break;
         default:
             break;
     }
 }
 
-volatile bool pollMe = false;
-
-ISR(TIMER0_COMPA_vect) {
-    if (!pollMe)
-        pollMe = true;
-
-}
 
 void loop() {
-    if (pollMe) {
-        pollMe = false;
-        demoReadValue(true);
-        //demoReadValue(false);
-        //demoDistanceValue(true);
-        //demoDistanceValue(false);
-        //demoLocate();
-    }
+      delay(25);
+      demoReadValue();
+      //demoLocate();
 }

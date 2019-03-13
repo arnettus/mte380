@@ -13,9 +13,9 @@ private:
     T *values;
     int capacity;
     int currentIndex;
-    volatile T currentSum;
-    volatile int currentNumberOfEntries;
-    volatile unsigned long timestamp;
+    T currentSum;
+    int currentNumberOfEntries;
+    unsigned long timestamp;
 
 public:
     RollingAverage(int _capacity) : capacity(_capacity), currentSum(0), currentIndex(0), currentNumberOfEntries(0) {

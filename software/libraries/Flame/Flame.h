@@ -9,12 +9,6 @@ enum FlameStatus {
     FLAME_IS_LEFT,
     FLAME_IS_RIGHT,
     FLAME_IS_CENTERED,
-    FLAME_IS_EXTINGUISHABLE,
-};
-
-struct FlameLocation {
-    FlameStatus status;
-    int distance;
 };
 
 class Flame {
@@ -26,9 +20,7 @@ public:
     Flame(int _leftPin, int _rightPin);
 
     int readValue(bool useLeft);
-    int readDistance(bool useLeft);
-
-    FlameLocation locate();
+    FlameStatus locate();
 };
 
 #endif
