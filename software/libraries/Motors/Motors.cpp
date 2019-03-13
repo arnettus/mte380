@@ -131,6 +131,19 @@ void Motors::TurnLeft(){
     }
 }
 
+void Motors::TurnLeft(int fl, int rl, int fr, int rr) {
+    if(!_busy){
+        // Take the lock
+        _busy = true;
+        // Left side motors FWD
+        Motors::_DriveFrontLeftREV(fl); // M2
+        Motors::_DriveRearLeftREV(rl); // M4
+        // Right side motors REV
+        Motors::_DriveFrontRightFWD(fr); // M1
+        Motors::_DriveRearRightFWD(rr); // M3
+    }
+}
+
 void Motors::TurnRight(){
     if(!_busy){
         // Take the lock
@@ -141,6 +154,19 @@ void Motors::TurnRight(){
         // Right side motors REV
         Motors::_DriveFrontRightREV(80); // M1
         Motors::_DriveRearRightREV(86); // M3
+    }
+}
+
+void Motors::TurnRight(int fl, int rl, int fr, int rr) {
+    if(!_busy){
+        // Take the lock
+        _busy = true;
+        // Left side motors FWD
+        Motors::_DriveFrontLeftFWD(fl); // M2
+        Motors::_DriveRearLeftFWD(rl); // M4
+        // Right side motors REV
+        Motors::_DriveFrontRightREV(fr); // M1
+        Motors::_DriveRearRightREV(rr); // M3
     }
 }
 
@@ -193,7 +219,7 @@ void Motors::TurnRightSand() {
         Motors::_DriveRearRightREV(200);
     }
 }
-
+/*
 void Motors::OLTurnLeft90() {
     // LEFT TURN
     myMotors.DriveRev();
@@ -220,7 +246,7 @@ void Motors::OLTurnRight90() {
     myMotors.DriveFwd();
     delay(200);
     myMotors.Halt();
-}
+}*/
 
 int Motors::GetMotor1Enc(){
     return(_m1Enc.read());
