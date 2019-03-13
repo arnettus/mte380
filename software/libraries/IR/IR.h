@@ -8,9 +8,10 @@ private:
     const int pin;
 
 public:
-    IR(int pin);
+    IR(int _pin);
 
     int readDistance();
+    int readValue();
 };
 
 #endif
