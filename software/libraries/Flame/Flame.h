@@ -11,6 +11,8 @@ private:
 public:
     Flame(int _leftPin, int _rightPin);
 
+    int readRightFlame();
+    int readLeftFlame();
     bool isFlameInSight();
 };
 

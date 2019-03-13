@@ -26,7 +26,13 @@ ISR(TIMER1_COMPA_vect) {
 
 void loop() {
    if (pollMe) {
-        Serial.println(f.isFlameInSight());
+        Serial.print("Extinguish?: ");
+        Serial.print(f.isFlameInSight());
+        Serial.print(" Right: ");
+        Serial.print(f.readRightFlame());
+        Serial.print(" Left: ");
+        Serial.println(f.readLeftFlame());
+
         pollMe = false;
     }
 }
