@@ -1,48 +1,32 @@
 #include <Flame.h>
 #include <SoftwareSerial.h>
 
-Flame flame(A0, A1);
+Flame f(A0, A1);
 
 void setup() {
     Serial.begin(9600);
+
+    noInterrupts();
+    OCR1A = 0xFFF;   // approximately every 16ms
+
+    TCCR1A = 0;
+    TCCR1B = (1 << WGM12)|(1 << CS11)|(1 << CS10);
+    TCNT1 = 0;
+
+    TIMSK1 |= _BV(OCIE1A);
+    interrupts();
 }
 
-void demoReadValue() {
-    int l = flame.readValue(true);
-    int r = flame.readValue(false);
-    
-    Serial.print("Left: ");
-    Serial.print(l);
-    Serial.print(", Right: ");
-    Serial.print(r);
-    Serial.print(", diff: ");
-    Serial.println(abs(l-r));
+volatile bool pollMe = false;
+
+ISR(TIMER1_COMPA_vect) {
+    if (!pollMe)
+        pollMe = true;
 }
-
-void demoLocate() {
-    FlameStatus fs = flame.locate();
-
-    switch (fs) {
-        case FLAME_NOT_FOUND:
-            Serial.print("Flame not found\n");
-            break;
-        case FLAME_IS_LEFT:
-            Serial.print("Flame left\n");
-            break;
-        case FLAME_IS_RIGHT:
-            Serial.print("Flame right\n");
-            break;
-        case FLAME_IS_CENTERED:
-            Serial.print("Flame is centered\n");
-            break;
-        default:
-            break;
-    }
-}
-
 
 void loop() {
-      delay(25);
-      demoReadValue();
-      //demoLocate();
+   if (pollMe) {
+        Serial.println(f.isFlameInSight());
+        pollMe = false;
+    }
 }
