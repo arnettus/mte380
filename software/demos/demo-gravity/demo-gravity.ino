@@ -37,10 +37,10 @@ void setup()
 
   //g2.writeResetPin(true);
   //delay(500);
-  
+
   //g3.writeResetPin(true);
   //delay(500);
-  
+
   //g4.writeResetPin(true);
   //delay(500);
 
@@ -99,15 +99,13 @@ char msg[50];
 void loop()
 {
   //values[0] = g1.readRangeSingleMillimeters(); //not sure how many times this updates
-  
+
   //values[1] = g2.readRangeSingleMillimeters();
   //values[2] = g3.readRangeSingleMillimeters();
   //values[3] = g4.readRangeSingleMillimeters();
 
   //snprintf(msg, 50, "g1=%u, g2=%u, g3=%u, g4=%u", values[0], values[1], values[2], values[3]);
-  
-  
-  
+
   distAvg.add(g1.readRangeSingleMillimeters());
   //snprintf(msg, 50, "g1Avg=%u", distAvg.read());
   delay(10);
