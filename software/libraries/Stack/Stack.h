@@ -24,9 +24,17 @@ private:
         return size;
     }
 
+    bool isEmpty() {
+        return size == 0;
+    }
+
+    bool isFull() {
+        return size == capacity;
+    }
+
     void push(T value) {
-        if size == capacity {
-            // error handle
+        if (isFull()) {
+            throw "Cannot add values to full stack.";
         }
 
         values[size] = value;
@@ -34,11 +42,11 @@ private:
     }
 
     T pop() {
-        if size == 0 {
-            // error handle
+        if (isEmpty()) {
+            throw "Cannot pop values from empty stack.";
         }
 
-        val = values[size-1];
+        T val = values[size-1];
         size -= 1;
 
         return val;
