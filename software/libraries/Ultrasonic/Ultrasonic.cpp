@@ -16,8 +16,5 @@ long Ultrasonic::ReadDistance() {
     delayMicroseconds(10);
     digitalWrite(trigPin_, LOW);
 
-    // cm
-    // return (pulseIn(echoPin_, HIGH)/2) / 29.1;
-
-    return pulseIn(echoPin_, HIGH);
+    return (pulseIn(echoPin_, HIGH)/2) / 29.1;
 }

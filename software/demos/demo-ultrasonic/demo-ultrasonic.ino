@@ -1,34 +1,4 @@
-//#include <Ultrasonic.h>
-//
-//Ultrasonic u(13, 12);
-//
-//void setup() {
-//    Serial.begin(9600);
-//
-//    noInterrupts();
-//    OCR1A = 0xFFFF;   // approximately every 16ms
-//
-//    TCCR1A = 0;
-//    TCCR1B = (1 << WGM12)|(1 << CS11)|(1 << CS10);
-//    TCNT1 = 0;
-//
-//    TIMSK1 |= _BV(OCIE1A);
-//    interrupts();
-//}
-//
-//volatile bool pollMe = false;
-//
-//ISR(TIMER1_COMPA_vect) {
-//    if (!pollMe)
-//        pollMe = true;
-//}
-//
-//void loop() {
-//   if (pollMe) {
-//        Serial.println(u.ReadDistance());
-//        pollMe = false;
-//    }
-//}
+#include <Ultrasonic.h>
 
 int trigPin = 13;
 int echoPin = 12;
@@ -40,7 +10,7 @@ void setup() {
   //Define inputs and outputs
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
-  Serial.print("Starting...");
+  Serial.println("Starting...");
 }
 
 void loop() {
@@ -62,8 +32,7 @@ void loop() {
   cm = (duration/2) / 29.1;     // Divide by 29.1 or multiply by 0.0343
 
   Serial.print(cm);
-  Serial.print("cm");
-  Serial.println();
+  Serial.println("cm");
 
-  delay(16);
+  delay(50);
 }
