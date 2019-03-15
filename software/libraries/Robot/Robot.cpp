@@ -82,9 +82,6 @@ void Robot::pathPlanSurveyAState() {
         locatePOI();
         if(isFireAlive) checkAndKillFire();
     } else {
-        // Do you even need this check? If you entered this path,
-        // it should be assumed that you reached a goal that wasn't
-        // your final goal.
         if(isAtGoal()) removeGoal();
 
         if(isFacingNextGoal()) {
@@ -102,9 +99,6 @@ void Robot::pathPlanState() {
         st = HOUSE;
         removePOI();
     } else {
-        // Do you even need this check? If you entered this path,
-        // it should be assumed that you reached a goal that wasn't
-        // your final goal.
         if(isAtGoal()) removeGoal();
 
         if(isFacingNextGoal()) {
