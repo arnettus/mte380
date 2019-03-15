@@ -23,8 +23,10 @@ class Stack {
         bool isFull();
 
         void push(T value);
+        void empty();
         T pop();
         T peek();
+
         bool operator==(Stack<T> rhs);
 };
 
@@ -64,6 +66,11 @@ void Stack<T>::push(T value) {
 }
 
 template<typename T>
+void Stack<T>::empty() {
+    size = 0;
+}
+
+template<typename T>
 T Stack<T>::pop() {
     if (isEmpty()) {
         throw "Cannot pop values from empty stack.";
@@ -93,9 +100,6 @@ bool Stack<T>::operator==(Stack<T> rhs) {
     }
 
     for(int i = 0; i <size; i++) {
-        // You'll get a runtime error here if stacks
-        // have different types. Handle that sometime.
-
         if(read(i) != rhs.read(i)){
             return false;
         }

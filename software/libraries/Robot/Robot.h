@@ -3,6 +3,7 @@
 
 #include <stdio.h> // Not sure if this is needed.
 #include <Stack.h>
+#include <Coordinate.h>
 
 const int MAP_WIDTH = 6;
 const int MAP_HEIGHT = 6;
@@ -12,6 +13,8 @@ const int POI_CAP = 35;
 
 const int START_X = 3;
 const int START_Y = 5;
+
+const int LAST_ROW = 0;
 
 class Robot {
   public:
@@ -36,7 +39,7 @@ class Robot {
         WATER,
         SAND,
         MISSION,
-        GRAVEL,
+        GRAVEL
     };
 
     enum House {
@@ -50,18 +53,26 @@ class Robot {
         REVERSE_APPROACHING_HOUSE_SPEED = -10,
         LEFT_TURN_SPEED = 20,
         RIGHT_TURN_SPEED = 30,
-        NORMAL_SPEED = 40,
+        NORMAL_SPEED = 40
+    };
+
+    enum Orientation {
+        NORTH = 0,
+        EAST = 90,
+        SOUTH = 180,
+        WEST = 270
     };
 
     Tile grid[MAP_WIDTH][MAP_HEIGHT];
 
-    Stack<int> pos;
+    Coordinate pos;
+    Orientation ori;
     State st;
     State bufSt;
     State prevSt;
 
-    Stack<Stack<int>> goals;
-    Stack<Stack<int>> psoi;
+    Stack<Coordinate> goals;
+    Stack<Coordinate> psoi;
 
     Speed speed;
 
@@ -71,6 +82,8 @@ class Robot {
 
     int angleTravelled;
     int targetAngle;
+
+    bool surveyBEnabled;
 
     // Initialization
     void initializeGrid();
@@ -94,17 +107,20 @@ class Robot {
 
     // Routing
     void locatePOI();
-    void turnToNextGoal();
+    void turnTowardsNextGoal();
     void removeGoal();
     void removePOI();
     void computeNextPOIGoal();
-    void setPos(int x, int y);
+    void computeNextSurveyAGoal();
+    void emptyGoals();
     bool isAtGoal();
     bool isAtLastGoal();
     bool isFacingNextGoal();
     Stack<Stack<int>> planPath(Stack<int> b, Stack<int> e);
 
     // Missions
+    bool isFireAlive;
+    void checkAndKillFire();
     House identifyHouse();
     void inidicateRedHouse();
     void indiciateYellowHouse();
@@ -120,9 +136,11 @@ class Robot {
     // Grid
     Tile readGrid(int x, int y);
     void writeGrid(int x, int y, Tile t);
+    bool isOnRow(int y);
 
-    // Localization
+    // Sensors
     void localize();
+    void detectAdjTiles();
 };
 
 #endif
