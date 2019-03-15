@@ -6,50 +6,102 @@
 
 template <typename T>
 class Stack {
-private:
-    T *values;
-    int capacity;
-    int size;
+    private:
+        T *values;
+        int capacity;
+        int size;
 
-  public:
-    Stack(int _capacity) : capacity(_capacity), size(0) {
-        values = new T[_capacity];
-    }
+        // Cheating.
+        T read(int idx);
 
-    ~Stack() {
-        delete [] values;
-    }
+    public:
+        Stack(int _capacity);
+        ~Stack();
 
-    int get_size() {
-        return size;
-    }
+        int getSize();
+        bool isEmpty();
+        bool isFull();
 
-    bool isEmpty() {
-        return size == 0;
-    }
-
-    bool isFull() {
-        return size == capacity;
-    }
-
-    void push(T value) {
-        if (isFull()) {
-            throw "Cannot add values to full stack.";
-        }
-
-        values[size] = value;
-        size += 1;
-    }
-
-    T pop() {
-        if (isEmpty()) {
-            throw "Cannot pop values from empty stack.";
-        }
-
-        T val = values[size-1];
-        size -= 1;
-
-        return val;
-    }
+        void push(T value);
+        T pop();
+        T peek();
+        bool operator==(Stack<T> rhs);
 };
+
+template<typename T>
+Stack<T>::Stack(int _capacity) : capacity(_capacity), size(0) {
+    values = new T[_capacity];
+}
+
+template<typename T>
+Stack<T>::~Stack() {
+    delete [] values;
+}
+
+template<typename T>
+int Stack<T>::getSize() {
+    return size;
+}
+
+template<typename T>
+bool Stack<T>::isEmpty() {
+    return size == 0;
+}
+
+template<typename T>
+bool Stack<T>::isFull() {
+    return size == capacity;
+}
+
+template<typename T>
+void Stack<T>::push(T value) {
+    if (isFull()) {
+        throw "Cannot add values to full stack.";
+    }
+
+    values[size] = value;
+    size += 1;
+}
+
+template<typename T>
+T Stack<T>::pop() {
+    if (isEmpty()) {
+        throw "Cannot pop values from empty stack.";
+    }
+
+    T val = values[size-1];
+    size -= 1;
+
+    return val;
+}
+
+template<typename T>
+T Stack<T>::peek() {
+    if (isEmpty()) {
+        throw "Cannot peek value from empty stack.";
+    }
+
+    T val = values[size-1];
+
+    return val;
+}
+
+template<typename T>
+bool Stack<T>::operator==(Stack<T> rhs) {
+    if(rhs.getSize() != getSize()) {
+        return false;
+    }
+
+    for(int i = 0; i <size; i++) {
+        // You'll get a runtime error here if stacks
+        // have different types. Handle that sometime.
+
+        if(read(i) != rhs.read(i)){
+            return false;
+        }
+    }
+
+    return true;
+}
+
 #endif
