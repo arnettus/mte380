@@ -10,7 +10,7 @@
 
 VL53L0X g1;
 RollingAverage<uint16_t> distAvg(10);
-//VL53L0X g2(23);
+//VL53L0X g2(23);1
 //VL53L0X g3(25);
 //VL53L0X g4(27);
 
@@ -100,7 +100,7 @@ void loop()
 {
   //values[0] = g1.readRangeSingleMillimeters(); //not sure how many times this updates
 
-  //values[1] = g2.readRangeSingleMillimeters();
+  //values[1] = g2.readRangeSingleMillimeters()
   //values[2] = g3.readRangeSingleMillimeters();
   //values[3] = g4.readRangeSingleMillimeters();
 
@@ -108,7 +108,7 @@ void loop()
 
   distAvg.add(g1.readRangeSingleMillimeters());
   //snprintf(msg, 50, "g1Avg=%u", distAvg.read());
-  delay(10);
+  delay(20);
   Serial.println(distAvg.read());
 
 }
