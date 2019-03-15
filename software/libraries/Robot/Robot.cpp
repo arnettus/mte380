@@ -44,15 +44,14 @@ void Robot::go() {
 
         // sensor polling
 
-        // Turn off lidar readings during a turn state?
-        localize();
-
         // You don't want to turn tile detection on during a turn.
         // Depending on accuracy, you may not even want this on
         // while going straight.
         if(!(st == TURN_LEFT || st == TURN_RIGHT)) {
             detectAdjTiles();
         }
+
+        // If detect water, empty goals and go to path planning.
     }
 }
 
@@ -66,8 +65,14 @@ void Robot::pathPlanSurveyAState() {
     // are empty. Then check if you just stopped at your goal.
     if(goals.isEmpty()) {
         if(isOnRow(LAST_ROW)) {
-            st = PATH_PLAN;
-            if(surveyBEnabled) st = PATH_PLAN_SURVEY_B;
+            if(surveyBEnabled) {
+                st = PATH_PLAN_SURVEY_B;
+            } else {
+                st = PATH_PLAN;
+
+                // Differed from blackboard -> this needs to set up path_plan right?
+                computeNextPOIGoal();
+            }
         } else {
             computeNextSurveyAGoal();
         }
@@ -95,6 +100,8 @@ void Robot::pathPlanSurveyAState() {
 }
 
 void Robot::pathPlanState() {
+    halt();
+
     if(prevSt == STRAIGHT && isAtLastGoal()) {
         st = HOUSE;
         removePOI();
@@ -111,10 +118,88 @@ void Robot::pathPlanState() {
     prevSt = PATH_PLAN;
 }
 
+void Robot::houseState() {
+    if(prevSt == PATH_PLAN){
+        speed = APPROACHING_HOUSE_SPEED;
+        targetDistToGoal = HOUSE_PROXIMITY;
+        st = STRAIGHT;
+    } else if(prevSt == STRAIGHT) {
+        halt();
+
+        House h = identifyHouse();
+        h == RED_HOUSE ? inidicateRedHouse() : indiciateYellowHouse();
+
+        speed = REVERSE_APPROACHING_HOUSE_SPEED;
+        targetDistToGoal = HOUSE_PROXIMITY;
+        st = STRAIGHT;
+    } else if(prevSt == HOUSE) {
+        computeNextPOIGoal();
+        st = PATH_PLAN;
+    }
+
+    prevSt = HOUSE;
+}
+
+void Robot::straightState() {
+    if(prevSt != STRAIGHT) {
+        // Store previous state so you can return
+        // to it when you hit your target distance.
+        bufSt = prevSt;
+
+        // initialDistFromStopPos is based on lidar reading
+        // from stop state. targetDistToGoal is based on
+        // distance to location of goal on grid.
+        distTravelled = 0;
+        setTargetDistToGoal();
+        setInitialDistFromStopPos();
+
+        drive();
+    } else {
+        localize(); // Do we only want to call this while moving straight?
+        if(distTravelled == targetDistToGoal) st = bufSt;
+    }
+
+    prevSt = STRAIGHT;
+}
+
+void Robot::turnLeftState() {
+    if(prevSt != TURN_LEFT) {
+        bufSt = prevSt;
+        angleTravelled = 0;
+
+        turnLeft();
+    } else {
+        // Differed from blackboard -> commented localize out, we only want to do
+        // imu localization right???
+        // localize();
+
+        if(angleTravelled == targetAngle) st = bufSt;
+    }
+
+    prevSt = TURN_LEFT;
+}
+
+void Robot::turnRightState() {
+    if(prevSt != TURN_RIGHT) {
+        bufSt = prevSt;
+        angleTravelled = 0;
+
+        turnRight();
+    } else {
+        // Differed from blackboard -> commented localize out, we only want to do
+        // imu localization right???
+        // localize();
+
+        if(angleTravelled == targetAngle) st = bufSt;
+    }
+
+    prevSt = TURN_RIGHT;
+}
+
 void Robot::initializeGrid() {
     for (int i = 0; i < MAP_HEIGHT; ++i) {
         for (int j = 0; j < MAP_HEIGHT; ++j) {
-        grid[i][j] = UNKNOWN;
+            grid[i][j] = UNKNOWN;
         }
     }
 }
@@ -156,7 +241,7 @@ bool Robot::isOnRow(int y) {
 bool Robot::isFacingNextGoal() {}
 
 // Change state to TURN_LEFT or TURN_RIGHT depending on
-// next goal's position.
+// next goal's position. Set targetAngle here!
 void Robot::turnTowardsNextGoal() {}
 
 // Hope that we never have to actually implement this.
@@ -173,9 +258,26 @@ void Robot::checkAndKillFire() {}
 // Tells you to move to the row above you.
 void Robot::computeNextSurveyAGoal() {}
 
+// The actual path planning entry function.
+void Robot::computeNextPOIGoal() {}
+
 void Robot::halt() {}
 
 void Robot::localize() {}
 
 // Make sure to handle edge cases properly.
 void detectAdjTiles() {}
+
+// Map Colour type to House type.
+void identifyHouse() {}
+
+void inidicateRedHouse() {}
+
+void inidicateYellowHouse() {}
+
+// Go at the robot's speed.
+void drive() {}
+
+void turnLeft() {}
+
+void turnRight() {}

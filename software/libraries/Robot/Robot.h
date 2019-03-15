@@ -16,6 +16,9 @@ const int START_Y = 5;
 
 const int LAST_ROW = 0;
 
+const int HOUSE_PROXIMITY = 5; // cm
+const int NEGATIVE_HOUSE_PROXIMITY = 5; // cm
+
 class Robot {
   public:
     Robot();
@@ -78,7 +81,7 @@ class Robot {
 
     int initialDistFromStopPos;
     int distTravelled;
-    int targetDist;
+    int targetDistToGoal;
 
     int angleTravelled;
     int targetAngle;
@@ -116,7 +119,7 @@ class Robot {
     bool isAtGoal();
     bool isAtLastGoal();
     bool isFacingNextGoal();
-    Stack<Stack<int>> planPath(Stack<int> b, Stack<int> e);
+    Stack<Coordinate> planPath(Coordinate b, Coordinate e);
 
     // Missions
     bool isFireAlive;
@@ -130,8 +133,8 @@ class Robot {
     void drive();
     void turnLeft();
     void turnRight();
-    void setSpeed();
-    void setInitialDistance();
+    void setInitialDistFromStopPos();
+    void setTargetDistToGoal();
 
     // Grid
     Tile readGrid(int x, int y);
