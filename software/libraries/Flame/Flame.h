@@ -5,12 +5,12 @@
 
 class Flame {
 private:
-    const int leftPin;
-    const int rightPin;
+    const int pin;
 
 public:
-    Flame(int _leftPin, int _rightPin);
+    Flame(int pin);
 
+    int readFlame();
     bool isFlameInSight();
 };
 
