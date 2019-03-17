@@ -28,10 +28,8 @@ void loop() {
    if (pollMe) {
         Serial.print("Extinguish?: ");
         Serial.print(f.isFlameInSight());
-        Serial.print(" Right: ");
-        Serial.print(f.readRightFlame());
-        Serial.print(" Left: ");
-        Serial.println(f.readLeftFlame());
+        Serial.print(" Reading: ");
+        Serial.print(f.readFlame());
 
         pollMe = false;
     }

@@ -2,29 +2,13 @@
 #include <Arduino.h>
 
 const int IN_RANGE = 1000;
-const int TOL = 400;
 
-Flame::Flame(int _leftPin, int _rightPin) : leftPin(_leftPin), rightPin(_rightPin) {}
+Flame::Flame(int _pin) : pin(_pin) {}
 
-int Flame::readRightFlame() {
-    return analogRead(rightPin);
-}
-
-int Flame::readLeftFlame() {
-    return analogRead(leftPin);
+int Flame::readFlame() {
+    return analogRead(pin);
 }
 
 bool Flame::isFlameInSight() {
-    int l = analogRead(leftPin);
-    int r = analogRead(rightPin);
-
-    if (l > IN_RANGE || r > IN_RANGE) {
-        return false;
-    }
-
-    return abs(l - r) < TOL;
+    return analogRead(pin) <= IN_RANGE;
 }
-
-// if the difference between them is low and the
-// neither of them are out of range, then light the candle
-// the wirst case scenario would be when they are
