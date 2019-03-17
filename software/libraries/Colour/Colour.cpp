@@ -85,15 +85,9 @@ Colour::ColourType Colour::ReadColour(int delay_time) {
 }
 
 Colour::ColourType Colour::GetColour(int r, int g, int b) {
-    if (r >= RED_R_LOW && r <= RED_R_HIGH
-        && g >= RED_G_LOW && g <= RED_G_HIGH
-        && b >= RED_B_LOW && b <= RED_B_HIGH) {
+    if (g > r && g > b) {
         return ColourType::RED;
-    } else if (r >= YELLOW_R_LOW && r <= YELLOW_R_HIGH
-        && g >= YELLOW_G_LOW && g <= YELLOW_G_HIGH
-        && b >= YELLOW_B_LOW && b <= YELLOW_B_HIGH) {
-        return ColourType::YELLOW;
     }
 
-    return ColourType::UNKNOWN;
+    return ColourType::YELLOW;
 }
