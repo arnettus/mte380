@@ -11,6 +11,11 @@
 const int MAP_WIDTH = 6;
 const int MAP_HEIGHT = 6;
 
+const int TILE_LENGTH = 30;
+const int HALF_TILE_LENGTH = 15;
+const int TILE_WIDTH = 30;
+const int HALF_TILE_WIDTH = 15;
+
 const int GOAL_CAP = 35;
 const int POI_CAP = 35;
 
@@ -86,6 +91,7 @@ class Robot {
     Speed speed;
 
     int initialDistFromStopPos;
+    int tilesPrevAdvanced;
     int distTravelled;
     int targetDistToGoal;
 

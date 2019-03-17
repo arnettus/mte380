@@ -6,7 +6,8 @@ Robot::Robot() :
     goals(GOAL_CAP),
     psoi(POI_CAP),
     pos(START_X, START_Y),
-    ori(NORTH)
+    ori(NORTH),
+    lidar(8)
 {
     Robot::initializeGrid();
 
@@ -15,6 +16,7 @@ Robot::Robot() :
     Robot::initializeUltrasonic();
     Robot::initializeLidar();
     Robot::initializeGravity();
+
     Robot::initializeColor();
     Robot::initializeIMU();
     Robot::initializeLED();
@@ -160,11 +162,12 @@ void Robot::straightState() {
         // distance to location of goal on grid.
         distTravelled = 0;
         setInitialDistFromStopPos();
+        tilesPrevAdvanced = 0;
 
         drive();
     } else {
         localize();
-        if(distTravelled == targetDistToGoal) st = bufSt;
+        if(distTravelled >= targetDistToGoal) st = bufSt;
     }
 
     prevSt = STRAIGHT;
@@ -181,7 +184,7 @@ void Robot::turnLeftState() {
         // imu localization right???
         // localize();
 
-        if(angleTravelled == targetAngle) st = bufSt;
+        if(angleTravelled >= targetAngle) st = bufSt;
     }
 
     prevSt = TURN_LEFT;
@@ -207,7 +210,7 @@ void Robot::turnRightState() {
 
 void Robot::initializeGrid() {
     for (int i = 0; i < MAP_HEIGHT; ++i) {
-        for (int j = 0; j < MAP_HEIGHT; ++j) {
+        for (int j = 0; j < MAP_WIDTH; ++j) {
             grid[i][j] = UNKNOWN;
         }
     }
@@ -285,6 +288,29 @@ bool Robot::changedStateToTurnTowardsNextGoal() {
     return turned;
 }
 
+void Robot::localize() {
+    // assume lidar.measure() is being called
+    // on an interrupt in the background for now.
+    distTravelled = abs(initialDistFromStopPos - lidar.getDistance());
+
+    // you just check if the distTravelled / 30 floored is greater than numberOfTilesAdvanced
+    // update current coordinate
+    int numTilesAdvanced = distTravelled/30 - tilesPrevAdvanced;
+
+    if(numTilesAdvanced > 0) {
+        switch (ori) {
+            case NORTH:
+                pos.y -= numTilesAdvanced;
+            case SOUTH:
+                pos.y += numTilesAdvanced;
+            case WEST:
+                pos.x -= numTilesAdvanced;
+            case EAST:
+                pos.x += numTilesAdvanced;
+        }
+    }
+}
+
 // Not implemented yet:
 
 // Hope that we never have to actually implement this.
@@ -320,11 +346,6 @@ void drive() {}
 void turnLeft() {}
 
 void turnRight() {}
-
-// Wait to figure out lidar and gravity for this one.
-
-// figure out distance travelled from initial distance and map to a coordinate.
-void Robot::localize() {}
 
 // Wait to figure out gravity for this one.
 
