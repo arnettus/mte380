@@ -4,6 +4,9 @@
 #include <stdio.h> // Not sure if this is needed.
 #include <Stack.h>
 #include <Coordinate.h>
+#include <TFLidar.h>
+#include <Flame.h>
+#include <Motors.h>
 
 const int MAP_WIDTH = 6;
 const int MAP_HEIGHT = 6;
@@ -18,6 +21,7 @@ const int LAST_ROW = 0;
 
 const int HOUSE_PROXIMITY = 5; // cm
 const int NEGATIVE_HOUSE_PROXIMITY = 5; // cm
+const int STANDARD_TARGET_ANGLE = 90; // deg
 
 class Robot {
   public:
@@ -66,6 +70,8 @@ class Robot {
         WEST = 270
     };
 
+    TFLidar lidar;
+
     Tile grid[MAP_WIDTH][MAP_HEIGHT];
 
     Coordinate pos;
@@ -87,6 +93,7 @@ class Robot {
     int targetAngle;
 
     bool surveyBEnabled;
+    bool missionCompleted;
 
     // Initialization
     void initializeGrid();
@@ -118,7 +125,7 @@ class Robot {
     void emptyGoals();
     bool isAtGoal();
     bool isAtLastGoal();
-    bool isFacingNextGoal();
+    bool changedStateToTurnTowardsNextGoal();
     Stack<Coordinate> planPath(Coordinate b, Coordinate e);
 
     // Missions

@@ -21,6 +21,12 @@ Robot::Robot() :
 
     // Initialize survey mode properly.
     goals.push(pos);
+
+    // The target angle will never change because
+    // we only want to turn 90 per turn.
+    targetAngle = STANDARD_TARGET_ANGLE;
+
+    missionCompleted = false;
 }
 
 void Robot::go() {
@@ -89,10 +95,9 @@ void Robot::pathPlanSurveyAState() {
     } else {
         if(isAtGoal()) removeGoal();
 
-        if(isFacingNextGoal()) {
+        if(!changedStateToTurnTowardsNextGoal()) {
+            setTargetDistToGoal();
             st = STRAIGHT;
-        } else {
-            turnTowardsNextGoal();
         }
     }
 
@@ -108,10 +113,9 @@ void Robot::pathPlanState() {
     } else {
         if(isAtGoal()) removeGoal();
 
-        if(isFacingNextGoal()) {
+        if(!changedStateToTurnTowardsNextGoal()) {
+            setTargetDistToGoal();
             st = STRAIGHT;
-        } else {
-            turnTowardsNextGoal();
         }
     }
 
@@ -122,18 +126,23 @@ void Robot::houseState() {
     if(prevSt == PATH_PLAN){
         speed = APPROACHING_HOUSE_SPEED;
         targetDistToGoal = HOUSE_PROXIMITY;
+
         st = STRAIGHT;
-    } else if(prevSt == STRAIGHT) {
+    } else if(prevSt == STRAIGHT && !missionCompleted) {
         halt();
 
         House h = identifyHouse();
         h == RED_HOUSE ? inidicateRedHouse() : indiciateYellowHouse();
 
+        missionCompleted = true;
         speed = REVERSE_APPROACHING_HOUSE_SPEED;
         targetDistToGoal = HOUSE_PROXIMITY;
+
         st = STRAIGHT;
-    } else if(prevSt == HOUSE) {
+    } else { // This house has been completed, move on to next one.
+        missionCompleted = false;
         computeNextPOIGoal();
+
         st = PATH_PLAN;
     }
 
@@ -150,12 +159,11 @@ void Robot::straightState() {
         // from stop state. targetDistToGoal is based on
         // distance to location of goal on grid.
         distTravelled = 0;
-        setTargetDistToGoal();
         setInitialDistFromStopPos();
 
         drive();
     } else {
-        localize(); // Do we only want to call this while moving straight?
+        localize();
         if(distTravelled == targetDistToGoal) st = bufSt;
     }
 
@@ -190,6 +198,7 @@ void Robot::turnRightState() {
         // imu localization right???
         // localize();
 
+        // imuLocalize();
         if(angleTravelled == targetAngle) st = bufSt;
     }
 
@@ -220,6 +229,10 @@ void Robot::removeGoal() {
     goals.pop();
 }
 
+void Robot::removePOI() {
+    psoi.pop();
+}
+
 bool Robot::isAtGoal() {
     Coordinate goal = goals.peek();
 
@@ -234,26 +247,62 @@ bool Robot::isOnRow(int y) {
     return pos.y == y;
 }
 
+// Turn the robot towards next goal's position if needed.
+bool Robot::changedStateToTurnTowardsNextGoal() {
+    Coordinate nextGoal = goals.peek();
+    bool turned = false;
+
+    if(nextGoal.x > pos.x) { // go east
+        if(ori != EAST) {
+            if(st == NORTH) st = TURN_RIGHT;
+            else st = TURN_LEFT;
+
+            turned = true;
+        }
+    } else if(nextGoal.x < pos.x) { // go west
+        if(ori != WEST) {
+            if(st == SOUTH) st = TURN_RIGHT;
+            else st = TURN_LEFT;
+
+            turned = true;
+        }
+    } else if(nextGoal.y > pos.y) { // go north
+        if(ori != NORTH) {
+            if(st == WEST) st = TURN_RIGHT;
+            else st = TURN_LEFT;
+
+            turned = true;
+        }
+    } else { // go south
+        if(ori != SOUTH) {
+            if(st == EAST) st = TURN_RIGHT;
+            else st = TURN_LEFT;
+
+            turned = true;
+        }
+    }
+
+    return turned;
+}
+
 // Not implemented yet:
-
-// Compare Robot's current orientation and position to
-// next goal's position.
-bool Robot::isFacingNextGoal() {}
-
-// Change state to TURN_LEFT or TURN_RIGHT depending on
-// next goal's position. Set targetAngle here!
-void Robot::turnTowardsNextGoal() {}
 
 // Hope that we never have to actually implement this.
 void Robot::pathPlanSurveyBState() {}
 
+// Wait to figure out ultrasonics and flame for these two:
+
 // Determine whether you're looking at a point of interest
-// with your side-view ultrasonics. If so, fill psoi stack.
+// with your side-view ultrasonics and front view laser. If so, fill psoi stack.
 void Robot::locatePOI() {}
 
 // Check all your flame sensors. Rotate in direction of fire.
 // Turn on fan.
-void Robot::checkAndKillFire() {}
+void Robot::checkAndKillFire() {
+    isFireAlive = false;
+}
+
+// Wait to finish path planning for these two:
 
 // Tells you to move to the row above you.
 void Robot::computeNextSurveyAGoal() {}
@@ -261,23 +310,31 @@ void Robot::computeNextSurveyAGoal() {}
 // The actual path planning entry function.
 void Robot::computeNextPOIGoal() {}
 
+// Wait to figure out motors for these four.
+
+// Go at the robot's speed.
 void Robot::halt() {}
 
+void drive() {}
+
+void turnLeft() {}
+
+void turnRight() {}
+
+// Wait to figure out lidar and gravity for this one.
+
+// figure out distance travelled from initial distance and map to a coordinate.
 void Robot::localize() {}
+
+// Wait to figure out gravity for this one.
 
 // Make sure to handle edge cases properly.
 void detectAdjTiles() {}
 
+// Wait to figure out LED and colour sensor for these.
 // Map Colour type to House type.
 void identifyHouse() {}
 
 void inidicateRedHouse() {}
 
 void inidicateYellowHouse() {}
-
-// Go at the robot's speed.
-void drive() {}
-
-void turnLeft() {}
-
-void turnRight() {}
