@@ -52,6 +52,19 @@ void Robot::go() {
 
         // sensor polling
 
+        // do flanking sensors like this, have a flag for detectadjtiles
+        // that turns on and off (off while turning)
+
+        t = millis();
+        tdiff = pt - t;
+
+        if (lidarEnabled && tdiff > POLL_LIDAR_TIME)
+            poll lidar
+
+        if (gravityEnabled && tdiff > POLL_GRAVITY_TIME)
+
+
+
         // You don't want to turn tile detection on during a turn.
         // Depending on accuracy, you may not even want this on
         // while going straight.

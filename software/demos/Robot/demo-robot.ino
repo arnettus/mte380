@@ -1,8 +1,10 @@
 #include <Robot.h>
 
+Robot r;
+
 void setup() {
     Serial.begin(9600);
-    Robot r;
+    r.init();
 }
 
 void loop() {
