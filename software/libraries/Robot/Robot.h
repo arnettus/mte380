@@ -155,7 +155,7 @@ class Robot {
     bool isOnRow(int y);
 
     // Sensors
-    void localize();
+    void updateCurrentPosition();
     void detectAdjTiles();
 };
 

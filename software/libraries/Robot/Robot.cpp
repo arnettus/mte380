@@ -9,17 +9,7 @@ Robot::Robot() :
     ori(NORTH),
     lidar(8)
 {
-    Robot::initializeGrid();
-
-    Robot::initializeMotors();
-    Robot::initializeFlame();
-    Robot::initializeUltrasonic();
-    Robot::initializeLidar();
-    Robot::initializeGravity();
-
-    Robot::initializeColor();
-    Robot::initializeIMU();
-    Robot::initializeLED();
+    initializeGrid();
 
     // Initialize survey mode properly.
     goals.push(pos);
@@ -74,6 +64,26 @@ void Robot::go() {
 
         // If detect water, empty goals and go to path planning.
     }
+}
+
+void Robot::initializeSensors() {
+    initializeMotors();
+    initializeFlame();
+    initializeFan();
+    initializeUltrasonic();
+    initializeLidar();
+    initializeGravity();
+    initializeColor();
+    initializeIMU();
+    initializeLED();
+}
+
+void Robot::initializeFlame() {
+
+}
+
+void Robot::initializeFan() {
+    fan.Setup();
 }
 
 // This version of PATH_PLAN_SURVEY_A does not rely on turns
@@ -179,7 +189,7 @@ void Robot::straightState() {
 
         drive();
     } else {
-        localize();
+        updateCurrentPosition();
         if(distTravelled >= targetDistToGoal) st = bufSt;
     }
 
@@ -301,7 +311,7 @@ bool Robot::changedStateToTurnTowardsNextGoal() {
     return turned;
 }
 
-void Robot::localize() {
+void Robot::updateCurrentPosition() {
     // assume lidar.measure() is being called
     // on an interrupt in the background for now.
     distTravelled = abs(initialDistFromStopPos - lidar.getDistance());
@@ -326,9 +336,6 @@ void Robot::localize() {
 
 // Not implemented yet:
 
-// Hope that we never have to actually implement this.
-void Robot::pathPlanSurveyBState() {}
-
 // Wait to figure out ultrasonics and flame for these two:
 
 // Determine whether you're looking at a point of interest
@@ -338,8 +345,43 @@ void Robot::locatePOI() {}
 // Check all your flame sensors. Rotate in direction of fire.
 // Turn on fan.
 void Robot::checkAndKillFire() {
-    isFireAlive = false;
+    if flame detected{
+        rotate
+        turn on fan
+
+        stay in while loop until flame is gone, turn off flag fireIsAlive
+
+        turn off fan
+        rotate back
+    }
 }
+
+// Wait to figure out motors for these four.
+
+// Go at the robot's speed.
+void Robot::halt() {}
+
+void Robot::drive() {}
+
+void Robot::turnLeft() {}
+
+void Robot::turnRight() {}
+
+// Wait to figure out gravity for this one.
+
+// Make sure to handle edge cases properly.
+void Robot::detectAdjTiles() {}
+
+// Wait to figure out LED and colour sensor for these.
+// Map Colour type to House type.
+void Robot::identifyHouse() {}
+
+void Robot::inidicateRedHouse() {}
+
+void Robot::inidicateYellowHouse() {}
+
+// Hope that we never have to actually implement this.
+void Robot::pathPlanSurveyBState() {}
 
 // Wait to finish path planning for these two:
 
@@ -348,27 +390,3 @@ void Robot::computeNextSurveyAGoal() {}
 
 // The actual path planning entry function.
 void Robot::computeNextPOIGoal() {}
-
-// Wait to figure out motors for these four.
-
-// Go at the robot's speed.
-void Robot::halt() {}
-
-void drive() {}
-
-void turnLeft() {}
-
-void turnRight() {}
-
-// Wait to figure out gravity for this one.
-
-// Make sure to handle edge cases properly.
-void detectAdjTiles() {}
-
-// Wait to figure out LED and colour sensor for these.
-// Map Colour type to House type.
-void identifyHouse() {}
-
-void inidicateRedHouse() {}
-
-void inidicateYellowHouse() {}
