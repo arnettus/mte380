@@ -1,11 +1,13 @@
 #include <Flame.h>
 #include <SoftwareSerial.h>
 #include <Motors.h>
+#include <Fan.h>
 
 // constructors
 Flame leftFlame(A0);
 Flame rightFlame(A1);
 Motors myMotors;
+Fan myFan;
 
 // flags
 bool leftFlameDetected = false;
@@ -40,24 +42,26 @@ void loop() {
         if (leftFlame.readFlame() <= threshhold){
             // flame detected on left!
             myMotors.Halt();
-            //myMotors.Rotate(-90)
-            //turn the fan on
-            //delay(1000)
-            //turn the fan off
-            //myMotors.Rotate(90)
+            delay(500);
+            myMotors.OLTurnLeft90();
+            myFan.TurnOn();
+            delay(1000);
+            myFan.TurnOff();
+            myFan.Shutdown();
+            myMotors.OLTurnRight90();
             checkForFlame = false;
         }
         else if(rightFlame.readFlame() <= threshhold){
             // flame detected on right!
             myMotors.Halt();
-            //myMotors.Rotate(90)
-            //turn the fan on
-            //delay(1000)
-            //turn the fan off
-            //myMotors.Rotate(-90)
+            delay(500);
+            myMotors.OLTurnRight90();
+            myFan.TurnOn();
+            delay(1000);
+            myFan.TurnOff();
+            myFan.Shutdown();
+            myMotors.OLTurnLeft90();
             checkForFlame = false;
-        }
-        // Indicate the fire has been extinguished
-        digitalWrite(13, HIGH);   
+        } 
     }
 }
