@@ -183,6 +183,7 @@ class Robot {
     void detectAdjTiles();
     int distanceInFront();
     int expectedDistanceInFront();
+    bool waterDetected;
 
     // Distances
     int numTilesAway();

@@ -29,6 +29,7 @@ Robot::Robot(
     targetAngle = STANDARD_TARGET_ANGLE;
     missionCompleted = false;
     checkedForObjectInFront = false;
+    waterDetected = false;
 }
 
 void Robot::initializeSensors() {
@@ -92,6 +93,8 @@ void Robot::pathPlanSurveyAState() {
     } else if(prevSt == STRAIGHT && isAtLastGoal()) {
         emptyGoals();
         locatePOI();
+        detectTiles();
+
         if(isFireAlive) checkAndKillFire();
     } else {
         if(isAtGoal()) removeGoal();
@@ -156,8 +159,17 @@ void Robot::straightState() {
 
         drive();
     } else {
-        updateCurrentPosition();
-        if(distTravelled >= targetDistToGoal) st = bufSt;
+        updateCurrentPosition(); // updates waterDetected
+
+        if(distTravelled >= targetDistToGoal) { // could use isAtGoal check instead?
+            waterDetected = false; // in case water is detected but you're already at your goal anyway
+            st = bufSt;
+        } else if(waterDetected) { // only updates after position is updated
+            waterDetected = false;
+            emptyGoals();
+            computeNextPOIGoal();
+            st = bufSt;
+        }
     }
 
     prevSt = STRAIGHT;
@@ -276,9 +288,7 @@ void Robot::updateCurrentPosition() {
                 pos.x += numTilesAdvanced;
         }
 
-        // do water detection check here, u dont need it on tight pollll
-        // do tile detection here too to be honestttttttt
-        // basically only need to do it when you advance a tile, to see, what the one in front is
+        detectTiles();
     }
 
     tilesPrevAdvanced = numTilesAdvanced;
@@ -340,7 +350,7 @@ void Robot::locatePOI() {
 int Robot::distanceInFront() {
     int dist = lidar.getDistance();
 
-    if(dist <= 30) return gravities.GetDistance(STRAIGHT); // update to gravity
+    if(dist <= 30) return gravities.GetDistance(VERTICAL);
     return dist;
 }
 
@@ -370,11 +380,40 @@ void Robot::putOutFire() {
     isFireAlive = false;
 }
 
+void Robot::detectTiles() {
+    switch (ori) {
+        case NORTH:
+            if(pos.x != 0): grid[pos.y][pos.x-1] = gravities.GetTerrainType(LEFT);
+            if(pos.x != 5): grid[pos.y][pos.x+1] = gravities.GetTerrainType(RIGHT);
+            if(pos.y != 0) {
+                grid[pos.y-1][pos.x] = gravities.GetTerrainType(VERTICAL);
+                if(grid[pos.y-1][pos.x] == WATER): waterDetected = true;
+            }
+        case SOUTH:
+            if(pos.x != 0): grid[pos.y][pos.x-1] = gravities.GetTerrainType(RIGHT);
+            if(pos.x != 5): grid[pos.y][pos.x+1] = gravities.GetTerrainType(LEFT);
+            if(pos.y != 5) {
+                grid[pos.y+1][pos.x] = gravities.GetTerrainType(VERTICAL);
+                if(grid[pos.y+1][pos.x] == WATER): waterDetected = true;
+            }
+        case EAST:
+            if(pos.y != 0): grid[pos.y-1][pos.x] = gravities.GetTerrainType(LEFT);
+            if(pos.y != 5): grid[pos.y+1][pos.x] = gravities.GetTerrainType(RIGHT);
+            if(pos.x != 5) {
+                grid[pos.y][pos.x+1] = gravities.GetTerrainType(VERTICAL);
+                if(grid[pos.y][pos.x+1] == WATER): waterDetected = true;
+            }
+        case WEST:
+            if(pos.y != 0): grid[pos.y-1][pos.x] = gravities.GetTerrainType(RIGHT);
+            if(pos.y != 5): grid[pos.y+1][pos.x] = gravities.GetTerrainType(LEFT);
+            if(pos.x != 0) {
+                grid[pos.y][pos.x-1] = gravities.GetTerrainType(VERTICAL);
+                if(grid[pos.y][pos.x-1] == WATER): waterDetected = true;
+            }
+    }
+}
+
 // Not implemented yet:
-
-// Wait to figure out gravity for this one.
-void Robot::detectAdjTiles() {}
-
 
 // Navigator
 void Robot::halt() {}
