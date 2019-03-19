@@ -16,7 +16,7 @@ public:
         PERCENT_20 = 0x10,
         PERCENT_100= 0x11
     };
-    Colour(int S0, int S1, int S2, int S3, int OUT, Frequency frequency);
+    Colour(int S0, int S1, int S2, int S3, int OUT, Frequency frequency = PERCENT_20);
     void PrintRGB(int delay_time = 100);
     ColourType GetColour(int r, int g, int b);
     ColourType ReadColour(int delay_time = 100);

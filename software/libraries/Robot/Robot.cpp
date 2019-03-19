@@ -8,7 +8,15 @@ Robot::Robot(
         rightSonicTrigPin,
         rightSonicEchoPin,
         leftSonicTrigPin,
-        leftSonicEchoPin
+        leftSonicEchoPin,
+        cS0,
+        cS1,
+        cS2,
+        cS3,
+        cOUT,
+        cLEDPin,
+        redHouseLed,
+        yellowHouseLed
     ) :
     st(PATH_PLAN_SURVEY_A),
     prevSt(STRAIGHT),
@@ -21,7 +29,12 @@ Robot::Robot(
     rightFlame(rightFlamePin),
     fan(fanPin),
     rightSonic(rightSonicTrigPin, rightSonicEchoPin),
-    leftSonic(leftSonicTrigPin, leftSonicEchoPin)
+    leftSonic(leftSonicTrigPin, leftSonicEchoPin),
+    colourSensor(cS0, cS1, cS2, cS3, cOUT),
+    cLEDPin(cLEDPin),
+    redHouseLed(redHouseLed),
+    yellowHouseLed(yellowHouseLed)
+
 {
     initializeGrid();
 
@@ -36,7 +49,7 @@ void Robot::initializeSensors() {
     initializeFireFighter();
     initializeLidar();
     initializeGravity();
-    initializeColor();
+    initializeColour();
 }
 
 void Robot::go() {
@@ -74,6 +87,11 @@ void Robot::initializeFan() {
 
 void Robot::initializeGravity() {
     gravities.Init();
+}
+
+void Robot::initializeColour() {
+    pinMode(cLedPin, OUTPUT);
+    digitalWrite(cLedPin, HIGH); // maybe you can just turn this on right before you read?
 }
 
 void Robot::pathPlanSurveyAState() {
@@ -133,8 +151,8 @@ void Robot::houseState() {
     } else if(prevSt == STRAIGHT && !missionCompleted) {
         halt();
 
-        House h = identifyHouse();
-        h == RED_HOUSE ? inidicateRedHouse() : indiciateYellowHouse();
+        House h = identifyHouse(); // maybe an average reading here???
+        h == RED ? inidicateRedHouse() : indiciateYellowHouse();
 
         missionCompleted = true;
         speed = REVERSE_APPROACHING_HOUSE_SPEED;
@@ -413,6 +431,20 @@ void Robot::detectTiles() {
     }
 }
 
+ColourType Robot::identifyHouse() {
+    // we may want to take an average reading here
+    colourSensor.ReadColour();
+}
+
+void Robot::inidicateRedHouse() {
+    digitalWrite(redHouseLed, HIGH);
+}
+
+void Robot::inidicateYellowHouse() {
+    digitalWrite(yellowHouseLed, HIGH);
+}
+
+
 // Not implemented yet:
 
 // Navigator
@@ -423,13 +455,6 @@ void Robot::drive() {}
 void Robot::turnLeft() {}
 
 void Robot::turnRight() {}
-
-// Colour
-void Robot::identifyHouse() {}
-
-void Robot::inidicateRedHouse() {}
-
-void Robot::inidicateYellowHouse() {}
 
 // Wait to finish path planning for these two:
 // Tells you to move to the row above you.

@@ -9,6 +9,7 @@
 #include <Motors.h>
 #include <Fan.h>
 #include <Ultrasonic.h>
+#include <Colour.h>
 
 const int MAP_WIDTH = 6;
 const int MAP_HEIGHT = 6;
@@ -42,7 +43,15 @@ class Robot {
         int rightSonicTrigPin,
         int rightSonicEchoPin,
         int leftSonicTrigPin,
-        int leftSonicEchoPin
+        int leftSonicEchoPin,
+        int cS0,
+        int cS1,
+        int cS2,
+        int cS3,
+        int cOUT,
+        int cLEDPin,
+        int redHouseLed,
+        int yellowHouseLed
     );
 
     void initializeSensors();
@@ -70,11 +79,6 @@ class Robot {
         CANDLE,
     };
 
-    enum House {
-        RED_HOUSE,
-        YELLOW_HOUSE
-    };
-
     // Adjust to actual values.
     enum Speed {
         APPROACHING_HOUSE_SPEED = 10,
@@ -99,6 +103,7 @@ class Robot {
     rightSonic Ultrasonic;
     leftSonic Ultrasonic;
     GravitySensors gravities;
+    colourSensor Colour;
 
     Tile grid[MAP_WIDTH][MAP_HEIGHT];
 
@@ -118,6 +123,10 @@ class Robot {
     int distTravelled;
     int targetDistToGoal;
 
+    int cLEDPin;
+    int redHouseLed;
+    int yellowHouseLed;
+
     int angleTravelled;
     int targetAngle;
 
@@ -129,7 +138,7 @@ class Robot {
     void initializeFireFighter();
     void initializeLidar();
     void initializeGravity();
-    void initializeColor();
+    void initializeColour();
     void initializeIMU();
     void initializeLED();
 
@@ -163,7 +172,7 @@ class Robot {
     // Missions
     bool isFireAlive;
     void putOutFire();
-    House identifyHouse();
+    ColourType identifyHouse();
     void inidicateRedHouse();
     void indiciateYellowHouse();
 
