@@ -26,40 +26,40 @@ TFMiniLidar::TFMiniLidar(int windowSize) : averageDistance(windowSize){
 }
 
 
-boolean TFMiniLidar::init(Stream* _streamPtr) {
+boolean TFMiniLidar::init(HardwareSerial* _streamPtr) {
   // Store reference to stream/serial object
   streamPtr = _streamPtr;  
   return true;
 }
 
-void TFMiniLidar::start(){
+boolean TFMiniLidar::start(){
   // Clear state
   averageDistance.reset();
-  Serial.print("Current average: ");
-  Serial.println(averageDistance.read());
   delay(5000);
   distance = -1;
   strength = -1;
   state = READY;
+
+  // Open Serial
+  streamPtr->begin(115200);
   
   // Set standard output mode
   setStandardOutputMode();
+
+  return true;
 }
 
-void TFMiniLidar::stop() {
+boolean TFMiniLidar::stop() {
   // Set standard output mode
   setSingleScanMode();
 
-  // Clear any left over Serial data and then close lines
-  //while(streamPtr->read() != -1){
-  //}
-  while (streamPtr->available() > 0) {
-    streamPtr->read();
-    Serial.println("YE");
-  }
+  // Close Serial
+  streamPtr->end();
 
   // Set stopped state
   state = STOPPED;
+
+  return true;
 }
 
 // Public: The main function to measure distance. 

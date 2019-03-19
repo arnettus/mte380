@@ -54,9 +54,9 @@ class TFMiniLidar {
     TFMiniLidar(int windowSize);
 
     // Configuration
-    boolean init(Stream* _streamPtr);
-    void start();
-    void stop();
+    boolean init(HardwareSerial* _streamPtr);
+    boolean start();
+    boolean stop();
     void setSingleScanMode();
     
     // Data collection
@@ -65,7 +65,7 @@ class TFMiniLidar {
     void externalTrigger();
 
   private:
-    Stream* streamPtr;
+    HardwareSerial* streamPtr;
     int state;
     uint16_t distance;
     uint16_t strength;

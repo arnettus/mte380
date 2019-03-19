@@ -4,7 +4,6 @@ TFMiniLidar lidar(6);
 
 void setup() {
     Serial.begin(9600);
-    Serial3.begin(115200);
     lidar.init(&Serial3);
     delay(5000);
     Serial.println("Initialised");
