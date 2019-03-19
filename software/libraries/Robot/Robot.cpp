@@ -210,28 +210,16 @@ void Robot::straightState() {
 }
 
 void Robot::turnLeftState() {
-    if(prevSt != TURN_LEFT) {
-        bufSt = prevSt;
-        angleTravelled = 0;
+    nav.turnLeft();
 
-        nav.turnLeft();
-    } else {
-        if(angleTravelled >= targetAngle) st = bufSt;
-    }
-
+    st = prevSt;
     prevSt = TURN_LEFT;
 }
 
 void Robot::turnRightState() {
-    if(prevSt != TURN_RIGHT) {
-        bufSt = prevSt;
-        angleTravelled = 0;
+    nav.turnRight();
 
-        nav.turnRight();
-    } else {
-        if(angleTravelled == targetAngle) st = bufSt;
-    }
-
+    st = prevSt;
     prevSt = TURN_RIGHT;
 }
 
