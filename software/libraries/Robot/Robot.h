@@ -93,7 +93,6 @@ class Robot {
 
     // Sensors
     TFLidar lidar;
-
     flameLeft Flame;
     flameRight Flame;
     fan Fan;
@@ -163,7 +162,7 @@ class Robot {
 
     // Missions
     bool isFireAlive;
-    void checkAndKillFire();
+    void putOutFire();
     House identifyHouse();
     void inidicateRedHouse();
     void indiciateYellowHouse();
@@ -186,8 +185,7 @@ class Robot {
     int expectedDistanceInFront();
 
     // Distances
-    int mapDistanceToCoordinate();
-
+    int numTilesAway();
 };
 
 #endif

@@ -60,27 +60,6 @@ void Robot::go() {
             case TURN_RIGHT:
                 turnRightState();
         }
-
-        // sensor polling
-
-        // do flanking sensors like this, have a flag for detectadjtiles
-        // that turns on and off (off while turning)
-
-        t = millis();
-        tdiff = pt - t;
-
-        if (lidarEnabled && tdiff > POLL_LIDAR_TIME)
-            poll lidar
-
-        if (gravityEnabled && tdiff > POLL_GRAVITY_TIME)
-
-
-        // You don't want to turn tile detection on during a turn.
-        // Depending on accuracy, you may not even want this on
-        // while going straight.
-        if(!(st == TURN_LEFT || st == TURN_RIGHT)) {
-            detectAdjTiles();
-        }
     }
 }
 
@@ -286,12 +265,8 @@ bool Robot::changedStateToTurnTowardsNextGoal() {
 }
 
 void Robot::updateCurrentPosition() {
-    // assume lidar.measure() is being called
-    // on an interrupt in the background for now.
     distTravelled = abs(initialDistFromStopPos - distanceInFront());
 
-    // you just check if the distTravelled / 30 floored is greater than numberOfTilesAdvanced
-    // update current coordinate
     int numTilesAdvanced = distTravelled/30 - tilesPrevAdvanced;
 
     if(numTilesAdvanced > 0) {
@@ -314,62 +289,97 @@ void Robot::updateCurrentPosition() {
     tilesPrevAdvanced = numTilesAdvanced;
 }
 
-// Check all your flame sensors. Rotate in direction of fire.
-void Robot::checkAndKillFire() {
-    bool flameOnRight = rightFlame.isFlameInSight();
-    bool flameOnLeft = leftFlame.isFlameInSight();
-
-    if(flameOnRight || flameOnLeft){
-        if(flameOnRight) turnRight();
-        else turnLeft();
-
-        fan.TurnOn();
-        delay(FIRE_FIGHTING_TIME);
-        fan.TurnOff();
-        fan.Shutdown()
-        isFireAlive = false;
-
-        if(flameOnRight) turnLeft();
-        else turnRight();
-    }
-}
-
 void Robot::locatePOI() {
     if(!checkedForObjectInFront) {
         checkedForObjectInFront = true;
         int distFront = distanceInFront();
 
         if(distFront < expectedDistanceInFront()) {
-            y = mapDistanceToCoordinate();
-            grid[y][x] = MISSION;
+            int yTilesAway = numTilesAway(distFront);
+            grid[pos.y-yTilesAway][pos.x] = MISSION;
         }
     }
 
+    leftSonicReading = leftSonic.ReadAverageDistance();
+    rightSonicReading = rightSonic.ReadAverageDistance();
+
+    if(leftSonicReading < expectedDistanceOnLeft()) {
+        int poiX = pos.x - numTilesAway(leftSonicReading);
+        int poiY = pos.y;
+
+        Coordinate c = Coordinate(poiX, poiY);
+        grid[poiY][poiX] = MISSION;
+        psoi.add(c);
+
+        if(leftFlame.isFlameInSight()) {
+            turnLeft();
+            putOutFire();
+            turnRight();
+
+            // The poi was a candle.
+            grid[poiY][poiX] = CANDLE;
+            psoi.pop();
+        }
+    }
+
+    if(rightSonicReading < expectedDistanceOnRight()) {
+        int poiX = pos.x + numTilesAway(leftSonicReading);
+        int poiY = pos.y;
+
+        Coordinate c = Coordinate(poiX, poiY);
+        grid[poiY][poiX] = MISSION;
+        psoi.add(c);
+
+        if(rightFlame.isFlameInSight()) {
+            turnRight();
+            putOutFire();
+            turnLeft();
+
+            // The poi was a candle.
+            grid[poiY][poiX] = CANDLE;
+            psoi.pop();
+        }
+    }
 }
 
 int Robot::distanceInFront() {
     int dist = lidar.getDistance();
 
-    // Once you have gravities,
-    // return gravity.straight distance
-    if(dist <= 30) return dist;
+    if(dist <= 30) return dist; // update to gravity
     return dist;
 }
 
 int Robot::expectedDistanceInFront() {
-
+    return pos.y*TILE_LENGTH;
 }
 
-int Robot::mapDistanceToCoordinate() {
-
+int Robot::expectedDistanceOnRight() {
+    return (MAP_WIDTH-pos.x-1)*TILE_WIDTH;
 }
 
+int Robot::expectedDistanceOnLeft() {
+    return (pos.x)*TILE_WIDTH;
+}
 
+int Robot::numTilesAway(dist) {
+    return dist/2 + 1;
+}
+
+void Robot::putOutFire() {
+    fan.TurnOn();
+    delay(FIRE_FIGHTING_TIME);
+
+    fan.TurnOff();
+    fan.Shutdown()
+
+    isFireAlive = false;
+}
 // Not implemented yet:
 
-// Wait to figure out motors for these four.
+// Wait to figure out gravity for this one.
+void Robot::detectAdjTiles() {}
 
-// Go at the robot's speed.
+// Navigator
 void Robot::halt() {}
 
 void Robot::drive() {}
@@ -378,26 +388,19 @@ void Robot::turnLeft() {}
 
 void Robot::turnRight() {}
 
-// Wait to figure out gravity for this one.
-
-// Make sure to handle edge cases properly.
-void Robot::detectAdjTiles() {}
-
-// Wait to figure out LED and colour sensor for these.
-// Map Colour type to House type.
+// Colour
 void Robot::identifyHouse() {}
 
 void Robot::inidicateRedHouse() {}
 
 void Robot::inidicateYellowHouse() {}
 
-// Hope that we never have to actually implement this.
-void Robot::pathPlanSurveyBState() {}
-
 // Wait to finish path planning for these two:
-
 // Tells you to move to the row above you.
 void Robot::computeNextSurveyAGoal() {}
 
 // The actual path planning entry function.
 void Robot::computeNextPOIGoal() {}
+
+// Hope that we never have to actually implement this.
+void Robot::pathPlanSurveyBState() {}
