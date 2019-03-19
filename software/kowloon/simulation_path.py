@@ -1,48 +1,49 @@
 from pq import PriorityQueue
 
-
 class Node(object):
-    def __init__(self, x, y, cost, parent):
-        x = x
-        y = y
-        parent = parent
-        cost = cost
+    def __init__(self, x = -100, y = -100, cost = 0, parent = None):
+        self.parent = parent
+        self.cost = cost
+        self.seen = False
 
-def a_star_path(grid, start, goal):
-    came_from = a_star_search(grid, start, goal)
-    return reconstruct_path(came_from, start, goal)
+def a_star_path(start, goal):
+    return a_star_search(start, goal)
 
-def a_star_search(grid, start, goal):
+def a_star_search(start, goal):
+    aux_grid = [[Node() for i in range(6)] for i in range(6)]
+
     frontier = PriorityQueue()
     frontier.put(start, 0)
 
-    came_from = {}
-    cost_so_far = {}
+    start_x = start[0]
+    start_y = start[1]
 
-    came_from[start] = None
-    cost_so_far[start] = 0
+    aux_grid[start_x][start_y].seen = True
 
     while not frontier.empty():
         current = frontier.get()
 
-        if current == goal:
+        if current == goal: # use coordinates
             break
 
-        for nxt in neighbours(grid, current):
-            new_cost = cost_so_far[current] + cost(grid, current, nxt)
+        for nxt in neighbours(aux_grid, current): # returns a list of valid neighbours
+            nxt_x = nxt[0]
+            nxt_y = nxt[1]
+            curr_x = current[0]
+            curr_y = current[1]
 
-            if nxt not in cost_so_far or new_cost < cost_so_far[nxt]:
-                cost_so_far[nxt] = new_cost
-                priority = new_cost + heuristic(goal, nxt)
+            new_cost = aux_grid[curr_x][curr_y].cost + cost(aux_grid, current, nxt) # put turn and tile cost here
 
-                x, y = nxt
-                grid[x][y] = priority
+            if aux_grid[nxt_x][nxt_y].seen == False or new_cost < aux_grid[nxt_x][nxt_y].cost:
+                aux_grid[nxt_x][nxt_y].cost = new_cost
+
+                priority = new_cost + heuristic(goal, nxt) # keep at manhattan distance
 
                 frontier.put(nxt, priority)
-                came_from[nxt] = current
+                aux_grid[nxt_x][nxt_y].parent = current
+                aux_grid[nxt_x][nxt_y].seen = True
 
-    print(came_from)
-    return came_from
+    return aux_grid
 
 def heuristic(a, b):
     (x1, y1) = a
@@ -83,13 +84,19 @@ def neighbours(grid, pos):
 
     return n
 
-gr = [[0 for i in range(6)] for i in range(6)]
+
 start = (3, 5)
 end = (0, 0)
 
-p = a_star_path(gr, start, end)
-print(p)
+g = a_star_path(start, end)
+print(g[0][0].parent)
+
+
+gr = [[0 for i in range(6)] for i in range(6)]
+
+for x in range(6):
+    for y in range(6):
+        gr[x][y] = g[x][y].cost
 
 import pandas
-
 print(pandas.DataFrame(gr))
