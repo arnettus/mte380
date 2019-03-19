@@ -7,7 +7,7 @@ void setup() {
   Serial.begin(9600);
   Wire.begin();
   Serial.println("test setup");
-             
+
   gravities.Init();
   // put your setup code here, to run once:
 

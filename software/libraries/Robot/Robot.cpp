@@ -32,14 +32,10 @@ Robot::Robot(
 }
 
 void Robot::initializeSensors() {
-    initializeMotors();
-    initializeFlame();
     initializeFireFighter();
     initializeLidar();
     initializeGravity();
     initializeColor();
-    initializeIMU();
-    initializeLED();
 }
 
 void Robot::go() {
@@ -75,6 +71,10 @@ void Robot::initializeFan() {
     fan.Setup();
 }
 
+void Robot::initializeGravity() {
+    gravities.Init();
+}
+
 void Robot::pathPlanSurveyAState() {
     halt();
 
@@ -92,11 +92,9 @@ void Robot::pathPlanSurveyAState() {
     } else if(prevSt == STRAIGHT && isAtLastGoal()) {
         emptyGoals();
         locatePOI();
-
         if(isFireAlive) checkAndKillFire();
     } else {
         if(isAtGoal()) removeGoal();
-
         if(!changedStateToTurnTowardsNextGoal()) {
             setTargetDistToGoal();
             st = STRAIGHT;
@@ -128,7 +126,6 @@ void Robot::houseState() {
     if(prevSt == PATH_PLAN){
         speed = APPROACHING_HOUSE_SPEED;
         targetDistToGoal = HOUSE_PROXIMITY;
-
         st = STRAIGHT;
     } else if(prevSt == STRAIGHT && !missionCompleted) {
         halt();
@@ -139,12 +136,10 @@ void Robot::houseState() {
         missionCompleted = true;
         speed = REVERSE_APPROACHING_HOUSE_SPEED;
         targetDistToGoal = HOUSE_PROXIMITY;
-
         st = STRAIGHT;
     } else {
         missionCompleted = false;
         computeNextPOIGoal();
-
         st = PATH_PLAN;
     }
 
@@ -345,7 +340,7 @@ void Robot::locatePOI() {
 int Robot::distanceInFront() {
     int dist = lidar.getDistance();
 
-    if(dist <= 30) return dist; // update to gravity
+    if(dist <= 30) return gravities.GetDistance(STRAIGHT); // update to gravity
     return dist;
 }
 
@@ -374,10 +369,12 @@ void Robot::putOutFire() {
 
     isFireAlive = false;
 }
+
 // Not implemented yet:
 
 // Wait to figure out gravity for this one.
 void Robot::detectAdjTiles() {}
+
 
 // Navigator
 void Robot::halt() {}

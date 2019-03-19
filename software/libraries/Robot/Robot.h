@@ -98,6 +98,7 @@ class Robot {
     fan Fan;
     rightSonic Ultrasonic;
     leftSonic Ultrasonic;
+    GravitySensors gravities;
 
     Tile grid[MAP_WIDTH][MAP_HEIGHT];
 
@@ -130,7 +131,6 @@ class Robot {
     void initializeGravity();
     void initializeColor();
     void initializeIMU();
-    void initializeMotors();
     void initializeLED();
 
     // State functions
