@@ -133,6 +133,7 @@ void Robot::pathPlanState() {
         removePOI();
     } else {
         if(isAtGoal()) removeGoal();
+        // maybe do it here, re-compute goals???
 
         if(!changedStateToTurnTowardsNextGoal()) {
             setTargetDistToGoal();
@@ -179,7 +180,8 @@ void Robot::straightState() {
     } else {
         updateCurrentPosition(); // updates waterDetected
 
-        if(distTravelled >= targetDistToGoal) { // could use isAtGoal check instead?
+        // Consider, every time you stop, to empty your goals and re-compute path
+        if(distTravelled >= targetDistToGoal || waterDetected) { // could use isAtGoal check instead?
             waterDetected = false; // in case water is detected but you're already at your goal anyway
             st = bufSt;
         } else if(waterDetected) { // only updates after position is updated
