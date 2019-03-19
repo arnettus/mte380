@@ -45,7 +45,7 @@ public:
         FRONT = 0,
         LEFT = 1,
         RIGHT = 2,
-        STRAIGHT = 3
+        VERTICAL = 3
     };
     void Init();
     uint16_t GetDistance(GravityDirection direction);
