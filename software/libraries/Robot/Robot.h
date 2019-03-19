@@ -8,6 +8,7 @@
 #include <Flame.h>
 #include <Motors.h>
 #include <Fan.h>
+#include <Ultrasonic.h>
 
 const int MAP_WIDTH = 6;
 const int MAP_HEIGHT = 6;
@@ -36,8 +37,12 @@ class Robot {
     Robot(
         int lidarCapacity,
         int leftFlameSensorPin,
-        int rightFlameSensor,
-        int fanPin
+        int rightFlameSensoPin,
+        int fanPin,
+        int rightSonicTrigPin,
+        int rightSonicEchoPin,
+        int leftSonicTrigPin,
+        int leftSonicEchoPin
     );
 
     void initializeSensors();
@@ -60,8 +65,9 @@ class Robot {
         FLAT,
         WATER,
         SAND,
+        GRAVEL,
         MISSION,
-        GRAVEL
+        CANDLE,
     };
 
     enum House {
@@ -91,6 +97,8 @@ class Robot {
     flameLeft Flame;
     flameRight Flame;
     fan Fan;
+    rightSonic Ultrasonic;
+    leftSonic Ultrasonic;
 
     Tile grid[MAP_WIDTH][MAP_HEIGHT];
 
@@ -119,7 +127,6 @@ class Robot {
     // Initialization
     void initializeGrid();
     void initializeFireFighter();
-    void initializeUltrasonic();
     void initializeLidar();
     void initializeGravity();
     void initializeColor();
@@ -136,18 +143,23 @@ class Robot {
     void turnLeftState();
     void turnRightState();
 
-    // Routing
-    void locatePOI();
+    // Path planning
+    Stack<Coordinate> planPath(Coordinate b, Coordinate e);
+
+    // Goals
     void turnTowardsNextGoal();
     void removeGoal();
     void removePOI();
-    void computeNextPOIGoal();
     void computeNextSurveyAGoal();
     void emptyGoals();
     bool isAtGoal();
     bool isAtLastGoal();
     bool changedStateToTurnTowardsNextGoal();
-    Stack<Coordinate> planPath(Coordinate b, Coordinate e);
+
+    // Points of Interest (only relevant during survey mode really)
+    void locatePOI();
+    void computeNextPOIGoal();
+    bool checkedForObjectInFront;
 
     // Missions
     bool isFireAlive;
@@ -165,13 +177,17 @@ class Robot {
     void setTargetDistToGoal();
 
     // Grid
-    Tile readGrid(int x, int y);
-    void writeGrid(int x, int y, Tile t);
     bool isOnRow(int y);
 
     // Sensors
     void updateCurrentPosition();
     void detectAdjTiles();
+    int distanceInFront();
+    int expectedDistanceInFront();
+
+    // Distances
+    int mapDistanceToCoordinate();
+
 };
 
 #endif

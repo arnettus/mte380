@@ -1,6 +1,15 @@
 #include "Robot.h"
 
-Robot::Robot(lidarCapacity, leftFlamePin, rightFlamePin) :
+Robot::Robot(
+        lidarCapacity,
+        leftFlamePin,
+        rightFlamePin,
+        fanPin,
+        rightSonicTrigPin,
+        rightSonicEchoPin,
+        leftSonicTrigPin,
+        leftSonicEchoPin
+    ) :
     st(PATH_PLAN_SURVEY_A),
     prevSt(STRAIGHT),
     goals(GOAL_CAP),
@@ -9,21 +18,23 @@ Robot::Robot(lidarCapacity, leftFlamePin, rightFlamePin) :
     ori(NORTH),
     lidar(lidarCapacity),
     leftFlame(leftFlamePin),
-    rightFlamePin(rightFlamePin),
-    fan(fanPin)
+    rightFlame(rightFlamePin),
+    fan(fanPin),
+    rightSonic(rightSonicTrigPin, rightSonicEchoPin),
+    leftSonic(leftSonicTrigPin, leftSonicEchoPin)
 {
     initializeGrid();
 
     goals.push(pos);
     targetAngle = STANDARD_TARGET_ANGLE;
     missionCompleted = false;
+    checkedForObjectInFront = false;
 }
 
 void Robot::initializeSensors() {
     initializeMotors();
     initializeFlame();
     initializeFireFighter();
-    initializeUltrasonic();
     initializeLidar();
     initializeGravity();
     initializeColor();
@@ -64,15 +75,12 @@ void Robot::go() {
         if (gravityEnabled && tdiff > POLL_GRAVITY_TIME)
 
 
-
         // You don't want to turn tile detection on during a turn.
         // Depending on accuracy, you may not even want this on
         // while going straight.
         if(!(st == TURN_LEFT || st == TURN_RIGHT)) {
             detectAdjTiles();
         }
-
-        // If detect water, empty goals and go to path planning.
     }
 }
 
@@ -215,14 +223,6 @@ void Robot::initializeGrid() {
     }
 }
 
-Robot::Tile Robot::readGrid(int x, int y) {
-    return grid[y][x];
-}
-
-void Robot::writeGrid(int x, int y, Tile t) {
-    grid[y][x] = t;
-}
-
 void Robot::emptyGoals() {
     goals.empty();
 }
@@ -237,7 +237,6 @@ void Robot::removePOI() {
 
 bool Robot::isAtGoal() {
     Coordinate goal = goals.peek();
-
     return goal == pos;
 }
 
@@ -289,7 +288,7 @@ bool Robot::changedStateToTurnTowardsNextGoal() {
 void Robot::updateCurrentPosition() {
     // assume lidar.measure() is being called
     // on an interrupt in the background for now.
-    distTravelled = abs(initialDistFromStopPos - lidar.getDistance());
+    distTravelled = abs(initialDistFromStopPos - distanceInFront());
 
     // you just check if the distTravelled / 30 floored is greater than numberOfTilesAdvanced
     // update current coordinate
@@ -306,7 +305,13 @@ void Robot::updateCurrentPosition() {
             case EAST:
                 pos.x += numTilesAdvanced;
         }
+
+        // do water detection check here, u dont need it on tight pollll
+        // do tile detection here too to be honestttttttt
+        // basically only need to do it when you advance a tile, to see, what the one in front is
     }
+
+    tilesPrevAdvanced = numTilesAdvanced;
 }
 
 // Check all your flame sensors. Rotate in direction of fire.
@@ -329,9 +334,33 @@ void Robot::checkAndKillFire() {
     }
 }
 
-// Determine whether you're looking at a point of interest
-// with your side-view ultrasonics and front view laser. If so, fill psoi stack.
 void Robot::locatePOI() {
+    if(!checkedForObjectInFront) {
+        checkedForObjectInFront = true;
+        int distFront = distanceInFront();
+
+        if(distFront < expectedDistanceInFront()) {
+            y = mapDistanceToCoordinate();
+            grid[y][x] = MISSION;
+        }
+    }
+
+}
+
+int Robot::distanceInFront() {
+    int dist = lidar.getDistance();
+
+    // Once you have gravities,
+    // return gravity.straight distance
+    if(dist <= 30) return dist;
+    return dist;
+}
+
+int Robot::expectedDistanceInFront() {
+
+}
+
+int Robot::mapDistanceToCoordinate() {
 
 }
 
