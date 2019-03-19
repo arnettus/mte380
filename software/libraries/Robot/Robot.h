@@ -10,6 +10,8 @@
 #include <Fan.h>
 #include <Ultrasonic.h>
 #include <Colour.h>
+#include <Navigator.h>
+#include <Gravity.h>
 
 const int MAP_WIDTH = 6;
 const int MAP_HEIGHT = 6;
@@ -69,6 +71,7 @@ class Robot {
         DONE
     };
 
+    // Adjust based on terrain class
     enum Tile {
         UNKNOWN,
         FLAT,
@@ -77,22 +80,6 @@ class Robot {
         GRAVEL,
         MISSION,
         CANDLE,
-    };
-
-    // Adjust to actual values.
-    enum Speed {
-        APPROACHING_HOUSE_SPEED = 10,
-        REVERSE_APPROACHING_HOUSE_SPEED = -10,
-        LEFT_TURN_SPEED = 20,
-        RIGHT_TURN_SPEED = 30,
-        NORMAL_SPEED = 40
-    };
-
-    enum Orientation {
-        NORTH = 0,
-        EAST = 90,
-        SOUTH = 180,
-        WEST = 270
     };
 
     // Sensors
@@ -104,19 +91,17 @@ class Robot {
     leftSonic Ultrasonic;
     GravitySensors gravities;
     colourSensor Colour;
+    nav Navigator;
 
     Tile grid[MAP_WIDTH][MAP_HEIGHT];
 
     Coordinate pos;
-    Orientation ori;
     State st;
     State bufSt;
     State prevSt;
 
     Stack<Coordinate> goals;
     Stack<Coordinate> psoi;
-
-    Speed speed;
 
     int initialDistFromStopPos;
     int tilesPrevAdvanced;
@@ -132,6 +117,7 @@ class Robot {
 
     bool surveyBEnabled;
     bool missionCompleted;
+    bool reverse;
 
     // Initialization
     void initializeGrid();
@@ -177,10 +163,6 @@ class Robot {
     void indiciateYellowHouse();
 
     // Movement
-    void halt();
-    void drive();
-    void turnLeft();
-    void turnRight();
     void setInitialDistFromStopPos();
     void setTargetDistToGoal();
 

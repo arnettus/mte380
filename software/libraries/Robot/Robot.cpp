@@ -23,7 +23,6 @@ Robot::Robot(
     goals(GOAL_CAP),
     psoi(POI_CAP),
     pos(START_X, START_Y),
-    ori(NORTH),
     lidar(lidarCapacity),
     leftFlame(leftFlamePin),
     rightFlame(rightFlamePin),
@@ -40,9 +39,12 @@ Robot::Robot(
 
     goals.push(pos);
     targetAngle = STANDARD_TARGET_ANGLE;
+
+    // flags
     missionCompleted = false;
     checkedForObjectInFront = false;
     waterDetected = false;
+    reverse = false;
 }
 
 void Robot::initializeSensors() {
@@ -50,6 +52,7 @@ void Robot::initializeSensors() {
     initializeLidar();
     initializeGravity();
     initializeColour();
+    initializeNav();
 }
 
 void Robot::go() {
@@ -89,13 +92,22 @@ void Robot::initializeGravity() {
     gravities.Init();
 }
 
+void Robot::initializeNav() {
+    if (!nav.begin()) {
+        Serial.println("Navigator failed to begin");
+        while (1) {
+            delay(1000);
+        }
+    }
+}
+
 void Robot::initializeColour() {
     pinMode(cLedPin, OUTPUT);
     digitalWrite(cLedPin, HIGH); // maybe you can just turn this on right before you read?
 }
 
 void Robot::pathPlanSurveyAState() {
-    halt();
+    nav.halt();
 
     if(goals.isEmpty()) {
         if(isOnRow(LAST_ROW)) {
@@ -126,7 +138,7 @@ void Robot::pathPlanSurveyAState() {
 }
 
 void Robot::pathPlanState() {
-    halt();
+    nav.halt();
 
     if(prevSt == STRAIGHT && isAtLastGoal()) {
         st = HOUSE;
@@ -146,17 +158,16 @@ void Robot::pathPlanState() {
 
 void Robot::houseState() {
     if(prevSt == PATH_PLAN){
-        speed = APPROACHING_HOUSE_SPEED;
         targetDistToGoal = HOUSE_PROXIMITY;
         st = STRAIGHT;
     } else if(prevSt == STRAIGHT && !missionCompleted) {
-        halt();
+        nav.halt();
 
         House h = identifyHouse(); // maybe an average reading here???
         h == RED ? inidicateRedHouse() : indiciateYellowHouse();
 
         missionCompleted = true;
-        speed = REVERSE_APPROACHING_HOUSE_SPEED;
+        reverse = true;
         targetDistToGoal = HOUSE_PROXIMITY;
         st = STRAIGHT;
     } else {
@@ -176,8 +187,11 @@ void Robot::straightState() {
         setInitialDistFromStopPos();
         tilesPrevAdvanced = 0;
 
-        drive();
+        if(reverse): nav.goReverse();
+        else: nav.goForward();
     } else {
+        reverse = false; // default is go straight.
+
         updateCurrentPosition(); // updates waterDetected
 
         // Consider, every time you stop, to empty your goals and re-compute path
@@ -200,7 +214,7 @@ void Robot::turnLeftState() {
         bufSt = prevSt;
         angleTravelled = 0;
 
-        turnLeft();
+        nav.turnLeft();
     } else {
         if(angleTravelled >= targetAngle) st = bufSt;
     }
@@ -213,7 +227,7 @@ void Robot::turnRightState() {
         bufSt = prevSt;
         angleTravelled = 0;
 
-        turnRight();
+        nav.turnRight();
     } else {
         if(angleTravelled == targetAngle) st = bufSt;
     }
@@ -257,30 +271,31 @@ bool Robot::isOnRow(int y) {
 bool Robot::changedStateToTurnTowardsNextGoal() {
     Coordinate nextGoal = goals.peek();
     bool turned = false;
+    Direction ori = nav.getCurrentDirection();
 
     if(nextGoal.x > pos.x) { // go east
-        if(ori != EAST) {
+        if(ori != East) {
             if(st == NORTH) st = TURN_RIGHT;
             else st = TURN_LEFT;
 
             turned = true;
         }
     } else if(nextGoal.x < pos.x) { // go west
-        if(ori != WEST) {
-            if(st == SOUTH) st = TURN_RIGHT;
+        if(ori != West) {
+            if(st == South) st = TURN_RIGHT;
             else st = TURN_LEFT;
 
             turned = true;
         }
     } else if(nextGoal.y > pos.y) { // go north
-        if(ori != NORTH) {
+        if(ori != North) {
             if(st == WEST) st = TURN_RIGHT;
             else st = TURN_LEFT;
 
             turned = true;
         }
     } else { // go south
-        if(ori != SOUTH) {
+        if(ori != South) {
             if(st == EAST) st = TURN_RIGHT;
             else st = TURN_LEFT;
 
@@ -295,16 +310,17 @@ void Robot::updateCurrentPosition() {
     distTravelled = abs(initialDistFromStopPos - distanceInFront());
 
     int numTilesAdvanced = distTravelled/30 - tilesPrevAdvanced;
+    Direction ori = nav.getCurrentDirection();
 
     if(numTilesAdvanced > 0) {
         switch (ori) {
-            case NORTH:
+            case North:
                 pos.y -= numTilesAdvanced;
-            case SOUTH:
+            case South:
                 pos.y += numTilesAdvanced;
-            case WEST:
+            case West:
                 pos.x -= numTilesAdvanced;
-            case EAST:
+            case East:
                 pos.x += numTilesAdvanced;
         }
 
@@ -401,29 +417,31 @@ void Robot::putOutFire() {
 }
 
 void Robot::detectTiles() {
+    Direction ori = nav.getCurrentDirection();
+
     switch (ori) {
-        case NORTH:
+        case North:
             if(pos.x != 0): grid[pos.y][pos.x-1] = gravities.GetTerrainType(LEFT);
             if(pos.x != 5): grid[pos.y][pos.x+1] = gravities.GetTerrainType(RIGHT);
             if(pos.y != 0) {
                 grid[pos.y-1][pos.x] = gravities.GetTerrainType(VERTICAL);
                 if(grid[pos.y-1][pos.x] == WATER): waterDetected = true;
             }
-        case SOUTH:
+        case South:
             if(pos.x != 0): grid[pos.y][pos.x-1] = gravities.GetTerrainType(RIGHT);
             if(pos.x != 5): grid[pos.y][pos.x+1] = gravities.GetTerrainType(LEFT);
             if(pos.y != 5) {
                 grid[pos.y+1][pos.x] = gravities.GetTerrainType(VERTICAL);
                 if(grid[pos.y+1][pos.x] == WATER): waterDetected = true;
             }
-        case EAST:
+        case East:
             if(pos.y != 0): grid[pos.y-1][pos.x] = gravities.GetTerrainType(LEFT);
             if(pos.y != 5): grid[pos.y+1][pos.x] = gravities.GetTerrainType(RIGHT);
             if(pos.x != 5) {
                 grid[pos.y][pos.x+1] = gravities.GetTerrainType(VERTICAL);
                 if(grid[pos.y][pos.x+1] == WATER): waterDetected = true;
             }
-        case WEST:
+        case West:
             if(pos.y != 0): grid[pos.y-1][pos.x] = gravities.GetTerrainType(RIGHT);
             if(pos.y != 5): grid[pos.y+1][pos.x] = gravities.GetTerrainType(LEFT);
             if(pos.x != 0) {
@@ -435,7 +453,7 @@ void Robot::detectTiles() {
 
 ColourType Robot::identifyHouse() {
     // we may want to take an average reading here
-    colourSensor.ReadColour();
+   return colourSensor.ReadColour();
 }
 
 void Robot::inidicateRedHouse() {
@@ -446,17 +464,7 @@ void Robot::inidicateYellowHouse() {
     digitalWrite(yellowHouseLed, HIGH);
 }
 
-
-// Not implemented yet:
-
-// Navigator
-void Robot::halt() {}
-
-void Robot::drive() {}
-
-void Robot::turnLeft() {}
-
-void Robot::turnRight() {}
+// not implemented yet:
 
 // Wait to finish path planning for these two:
 // Tells you to move to the row above you.
