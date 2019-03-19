@@ -19,9 +19,10 @@ private:
     PID             pid;
     Motors          motors;
 
-    Direction _getNextDirectionLeft();
-    Direction _getNextDirectionRight();
-    static float _getAngleFromDirection(Direction d);
+    static Direction _getNextDirectionLeft(Direction d);
+    static Direction _getNextDirectionRight(Direction d);
+    static float _getAngleFromDirection(Direction d, Direction prevd);
+    String _getDirectionAsString(Direction d);
     inline void _turnLeftMotorCommand(float pwm);
     inline void _turnRightMotorCommand(float pwm);
     void _turnLeftDebug();
@@ -38,6 +39,7 @@ public:
 
     Direction getCurrentDirection();
     void manualMode(bool debugMode);
+    void imuLoop();
 
     void calibrateIMU();
     void printIMUOffsets();

@@ -1,18 +1,39 @@
 #include <Navigator.h>
 
+#define IMU_0360_DELAY 100
+
 const PIDSettings PIDTurnLeft = {
-    100,    // dt in ms
-    3,      // kp
-    0.01,   // ki
-    0,      // kd
-    90,     // outputMin
-    210,    // outputMax
-    0.01,   // tolerance
+    1.8,      // kp
+    0.001,   // ki
+    5,      // kd
+    0,     // outputMin
+    120,    // outputMax
+    10,   // tolerance
 };
+const PIDSettings PIDTurnRight = {
+    1.8,      // kp
+    0.001,   // ki
+    5,      // kd
+    0,     // outputMin
+    120,    // outputMax
+    9,   // tolerance
+};
+
+void printTargetAnglePWM(float target, float angle, float pwm) {
+    static char msg[64];
+    static char floats[3][8];
+    
+    dtostrf(target, 7, 3, floats[0]);
+    dtostrf(angle, 7, 3, floats[1]);
+    dtostrf(pwm, 7, 3, floats[2]);
+    snprintf(msg, 64, "Target Angle: %s, Angle: %s, PWM: %s", floats[0], floats[1], floats[2]);
+    Serial.println(msg);
+}
 
 Navigator::Navigator()
     : currentDirection(North)
-    , pid(PIDTurnLeft)
+    , pidl(PIDTurnLeft)
+    , pidr(PIDTurnRight)
     , imu(55)
 {
 }
@@ -25,55 +46,252 @@ bool Navigator::begin() {
     return true;
 }
 
-// Takes a single pwm command and produces relative motor speeds based on experimental results
 inline void Navigator::_turnLeftMotorCommand(float pwm) {
-    motors.TurnLeft(pwm, pwm - 3, pwm, pwm - 3);
+    motors.TurnLeft(pwm, pwm - 5, pwm, pwm - 5);
 }
 
-// Takes a single speed command and produces relative motor speeds based on experimental results
 inline void Navigator::_turnRightMotorCommand(float pwm) {
     motors.TurnRight(pwm - 3, pwm, pwm - 3, pwm);
 }
 
 void Navigator::turnLeft() {
     sensors_event_t s;
-    Direction nextDirection = _getNextDirectionLeft();
+    Direction nextDirection = Navigator::_getNextDirectionLeft(currentDirection);
 
     pid.clearPreviousResults();
-    pid.setSetpoint(Navigator::_getAngleFromDirection(nextDirection), PIDTurnLeft.tolerance);
+    pid.setSetpoint(Navigator::_getAngleFromDirection(nextDirection, currentDirection), PIDTurnLeft.tolerance);
     _turnLeftMotorCommand(PIDTurnLeft.outputMax);
 
     if (currentDirection == North) {
-        // Handle the initial IMU transition from 0 degrees to 360 degrees
+        int count = 0;
         do {
-            delay(PIDTurnLeft.dt);
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
-        } while (s.orientation.x < 350);
+            if (s.orientation.x > 260)
+                count++;
+            else
+                count = 0;
+        } while (count < 3);
     }
 
     if (nextDirection == North) {
         // Handle the back-and-forth between 0 degrees and 360 degrees
         do {
-            delay(PIDTurnLeft.dt);
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
-            float pwm = abs(pid.compute(s.orientation.x));  // error is is negative for a left turn
-            if (s.orientation.x > 350)
+            if (s.orientation.x > 300)
                 break;
-            _turnLeftMotorCommand(pwm);
-        } while (!pid.hasReachedSetpoint());
+            float pwm = pid.compute(s.orientation.x);
+            if (pwm < 0)
+                _turnLeftMotorCommand(abs(pwm));
+        } while (!pid.isLessThanSetpoint());
     } else {
         do {
-            delay(PIDTurnLeft.dt);
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
-            float pwm = abs(pid.compute(s.orientation.x));  // error is is negative for a left turn
-            _turnLeftMotorCommand(pwm);
-        } while (!pid.hasReachedSetpoint());
+            float pwm = pid.compute(s.orientation.x);
+            if (pwm < 0)
+                _turnLeftMotorCommand(abs(pwm));
+
+#ifdef Navigator_Debug_mode
+            printTargetAnglePWM(-1, s.orientation.x, pwm);
+            Serial.println(pwm);
+            Serial.println(s.orientation.x);
+#endif
+        } while (!pid.isLessThanSetpoint());
     }
 
+    motors.Halt();
+    currentDirection = nextDirection;
+    imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+    Serial.println(s.orientation.x);
+}
+
+void Navigator::_turnLeftDebug() {
+    char debug[128];
+    sensors_event_t s;
+    Direction nextDirection = Navigator::_getNextDirectionLeft(currentDirection);
+    float targetAngle = Navigator::_getAngleFromDirection(nextDirection, currentDirection);
+
+    if (targetAngle < 0)
+        Serial.println("Target angle error");
+
+    pid.clearPreviousResults();
+    pid.setSetpoint(targetAngle, PIDTurnLeft.tolerance);
+
+    if (currentDirection == North) {
+        // Handle the initial IMU transition from 0 degrees to 360 degrees
+        /*
+        do {
+            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+
+            printTargetAnglePWM(targetAngle, s.orientation.x, PIDTurnLeft.outputMax);
+
+        } while (s.orientation.x < 350);*/
+        int count = 0;
+        do {
+            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+
+            if (s.orientation.x > 260)
+                count++;
+            else
+                count = 0;
+
+        } while (count < 10);
+    }
+
+    if (nextDirection == North) {
+        // Handle the back-and-forth between 0 degrees and 360 degrees
+        do {
+            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+            float pwm = abs(pid.compute(s.orientation.x));  // error is is negative for a left turn
+
+            printTargetAnglePWM(targetAngle, s.orientation.x, pwm);
+
+            if (s.orientation.x > 350)
+                break;
+
+        } while (!pid.isLessThanSetpoint());
+    } else {
+        do {
+            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+            float pwm = abs(pid.compute(s.orientation.x));  // error is is negative for a left turn
+
+            printTargetAnglePWM(targetAngle, s.orientation.x, pwm);
+
+        } while (!pid.isLessThanSetpoint());
+    }
+
+    snprintf(debug, 128, "Finished turning. Previous direction: %s, current direction: %s", _getDirectionAsString(currentDirection).c_str(), _getDirectionAsString(nextDirection).c_str());
+    Serial.println(debug);
     currentDirection = nextDirection;
 }
 
-String _getDirectionAsString(Direction d) {
+void Navigator::turnRight() {
+    sensors_event_t s;
+    Direction nextDirection = Navigator::_getNextDirectionRight(currentDirection);
+
+    pid.clearPreviousResults();
+    pid.setSetpoint(Navigator::_getAngleFromDirection(nextDirection, currentDirection), PIDTurnRight.tolerance);
+    _turnRightMotorCommand(PIDTurnRight.outputMax);
+
+    if (currentDirection == North) {
+        // Handle the initial IMU transition from 360 degrees to 0 degrees
+        //delay(IMU_0360_DELAY);
+        int count = 0;
+        do {
+            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+
+            if (s.orientation.x < 100)
+                count++;
+            else
+                count = 0;
+
+        } while (count < 2);
+    }
+
+    if (nextDirection == North) {
+        // Handle the back-and-forth between 360 degrees and 0 degrees
+        do {
+            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+            if (s.orientation.x < 100)
+                break;
+            float pwm = pid.compute(s.orientation.x);
+
+            if (pwm > 0)
+                _turnRightMotorCommand(pwm);
+
+        } while (!pid.isGreaterThanSetpoint());
+    } else {
+        do {
+            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+            float pwm = pid.compute(s.orientation.x);
+
+            if (pwm > 0)
+                _turnRightMotorCommand(pwm);
+
+        } while (!pid.isGreaterThanSetpoint());
+    }
+
+    motors.Halt();
+    currentDirection = nextDirection;
+
+    imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+    Serial.println(s.orientation.x);
+}
+
+void Navigator::_turnRightDebug() {
+    char debug[128];
+    sensors_event_t s;
+    Direction nextDirection = Navigator::_getNextDirectionRight(currentDirection);
+    float targetAngle = Navigator::_getAngleFromDirection(nextDirection, currentDirection);
+
+    if (targetAngle < 0)
+        Serial.println("Target angle error");
+
+    pid.clearPreviousResults();
+    pid.setSetpoint(targetAngle, PIDTurnRight.tolerance);
+
+    if (currentDirection == North) {
+        // Handle the initial IMU transition from 360 degrees to 0 degrees
+        /*do {
+            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+
+            printTargetAnglePWM(targetAngle, s.orientation.x, PIDTurnRight.outputMax);
+
+        } while (s.orientation.x > 10);*/
+        int count = 0;
+        do {
+            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+
+            if (s.orientation.x < 100)
+                count++;
+            else
+                count = 0;
+
+        } while (count < 10);
+    }
+
+    if (nextDirection == North) {
+        // Handle the back-and-forth between 360 degrees and 0 degrees
+        do {
+            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+            if (s.orientation.x < 10)
+                break;
+            float pwm = pid.compute(s.orientation.x);
+
+            printTargetAnglePWM(targetAngle, s.orientation.x, pwm);
+
+        } while (!pid.isGreaterThanSetpoint());
+    } else {
+        do {
+            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+            float pwm = pid.compute(s.orientation.x);
+
+            printTargetAnglePWM(targetAngle, s.orientation.x, pwm);
+
+        } while (!pid.isGreaterThanSetpoint());
+    }
+
+    snprintf(debug, 128, "Finished turning. Previous direction: %s, current direction: %s", _getDirectionAsString(currentDirection).c_str(), _getDirectionAsString(nextDirection).c_str());
+    Serial.println(debug);
+    currentDirection = nextDirection;
+}
+
+void Navigator::goForward() {
+    motors.DriveFwd();
+}
+
+void Navigator::goReverse() {
+    motors.DriveRev();
+}
+
+void Navigator::halt() {
+    motors.Halt();
+}
+
+Direction Navigator::getCurrentDirection() {
+    return currentDirection;
+}
+
+String Navigator::_getDirectionAsString(Direction d) {
     switch (d) {
         case North:
             return "North";
@@ -88,100 +306,25 @@ String _getDirectionAsString(Direction d) {
     }
 }
 
-void Navigator::_turnLeftDebug() {
-    char debug[64];
-
-    sensors_event_t s;
-    Direction nextDirection = _getNextDirectionLeft();
-
-    float targetAngle = Navigator::_getAngleFromDirection(nextDirection);
-
-    pid.clearPreviousResults();
-    pid.setSetpoint(targetAngle, PIDTurnLeft.tolerance);
-
-    if (currentDirection == North) {
-        // Handle the initial IMU transition from 0 degrees to 360 degrees
-        do {
-            delay(PIDTurnLeft.dt);
-            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
-            
-            snprintf(debug, 64, "Target Angle: %d, Angle: %d", targetAngle, s.orientation.x);
-            Serial.println(debug);
-
-        } while (s.orientation.x < 350);
-    }
-
-    if (nextDirection == North) {
-        // Handle the back-and-forth between 0 degrees and 360 degrees
-        do {
-            delay(PIDTurnLeft.dt);
-            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
-            float pwm = abs(pid.compute(s.orientation.x));  // error is is negative for a left turn
-
-            snprintf(debug, 64, "Target Angle: %d, Angle: %d, PWM: %d", targetAngle, s.orientation.x, pwm);
-            Serial.println(debug);
-
-            if (s.orientation.x > 350)
-                break;
-
-        } while (!pid.hasReachedSetpoint());
-    } else {
-        do {
-            delay(PIDTurnLeft.dt);
-            imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
-            float pwm = abs(pid.compute(s.orientation.x));  // error is is negative for a left turn
-
-            snprintf(debug, 64, "Angle: %d, PWM: %d", s.orientation.x, pwm);
-            Serial.println(debug);
-
-        } while (!pid.hasReachedSetpoint());
-    }
-
-    snprintf(debug, 64, "Previous direction: %s, current direction: %s", _getDirectionAsString(currentDirection), _getDirectionAsString(nextDirection));
-
-    currentDirection = nextDirection;
-}
-
-void Navigator::turnRight() {
-
-}
-
-void Navigator::_turnRightDebug() {
-
-}
-
-void Navigator::goForward() {
-
-}
-
-void Navigator::goReverse() {
-
-}
-
-void Navigator::halt() {
-
-}
-
-Direction Navigator::getCurrentDirection() {
-    return currentDirection;
-}
-
-Direction Navigator::_getNextDirectionLeft() {
-    if (currentDirection == North)
+static Direction Navigator::_getNextDirectionLeft(Direction d) {
+    if (d == North)
         return West;
-    return static_cast<Direction>(currentDirection - 1);
+    return static_cast<Direction>(d - 1);
 }
 
-Direction Navigator::_getNextDirectionRight() {
-    if (currentDirection == West)
+static Direction Navigator::_getNextDirectionRight(Direction d) {
+    if (d == West)
         return North;
-    return static_cast<Direction>(currentDirection + 1);
+    return static_cast<Direction>(d + 1);
 }
 
-static float Navigator::_getAngleFromDirection(Direction d) {
+static float Navigator::_getAngleFromDirection(Direction d, Direction prevd) {
     switch (d) {
         case North:
-            return 0;
+            if (prevd == West)
+                return 360;
+            if (prevd == East)
+                return 0;
         case East:
             return 90;
         case South:
@@ -189,7 +332,7 @@ static float Navigator::_getAngleFromDirection(Direction d) {
         case West:
             return 270;
     }
-    return 0;
+    return -1;
 }
 
 void Navigator::calibrateIMU() {
@@ -239,6 +382,8 @@ void Navigator::manualMode(bool debugMode) {
     KeyState ks = W;
     char key;
 
+    debugMode ? Serial.println("Entered manual mode [DEBUG]") : Serial.println("Entered manual mode");
+
     while (1) {
         if (Serial.available() > 0) {
             key = Serial.read();
@@ -248,7 +393,8 @@ void Navigator::manualMode(bool debugMode) {
                         halt();
                         Serial.println("Going forward");
                         delay(1000);
-                        goForward();
+                        if (!debugMode)
+                            goForward();
                         ks = W;
                     }
                     break;
@@ -279,10 +425,18 @@ void Navigator::manualMode(bool debugMode) {
                 case 'q':
                     if (ks != Q) {
                         Serial.println("Stopping");
-                        halt();
+                        if (!debugMode)
+                            halt();
                         ks = Q;
                     }
                     break;
+                case 'x':
+                    sensors_event_t s;
+                    imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+                    Serial.print("Current direction: ");
+                    Serial.print(Navigator::_getDirectionAsString(currentDirection));
+                    Serial.print(", Orientation: ");
+                    Serial.println(s.orientation.x);
                 default:
                     break;
             }
@@ -291,3 +445,13 @@ void Navigator::manualMode(bool debugMode) {
     }
 }
 
+void Navigator::imuLoop() {
+    Serial.println("Entered IMU loop");
+    delay(2000);
+    while (true) {
+        sensors_event_t s;
+        imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
+        Serial.println(s.orientation.x);
+        delay(100);
+    }
+}

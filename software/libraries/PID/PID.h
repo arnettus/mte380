@@ -5,7 +5,6 @@
 #include <assert.h>
 
 struct PIDSettings {
-    float dt;
     float kp;
     float ki;
     float kd;
@@ -16,7 +15,6 @@ struct PIDSettings {
 
 class PID {
 private:
-    float dt;   // ms
     float kp;
     float ki;
     float kd;
@@ -31,12 +29,13 @@ private:
     float prevMeasured;
 
     float setpoint;
-    float tolerance;    // percentage of setpoint
+    float tolerance; // absolute tolerance for setpoint
+    float _setpointUpper;
+    float _setpointLower;
 
 public:
-    PID(float _dt, float _kp, float _ki, float _kd, float _outputMin, float _outputMax)
-        : dt(_dt / 1000)
-        , kp(_kp)
+    PID(float _kp, float _ki, float _kd, float _outputMin, float _outputMax)
+        : kp(_kp)
         , ki(_ki)
         , kd(_kd)
         , outputMin(_outputMin)
@@ -45,7 +44,7 @@ public:
         , integratedErrorMin(0)
         , tolerance(0.1)
     {
-        assert(dt > 0 && kp >= 0 && ki >= 0 && kd >= 0);
+        assert(kp >= 0 && ki >= 0 && kd >= 0);
         if (ki > 0) {
             integratedErrorMax = outputMax / ki;
             integratedErrorMin = outputMin / ki;
@@ -53,8 +52,7 @@ public:
     }
 
     PID(const PIDSettings s)
-        : dt(s.dt / 1000)
-        , kp(s.kp)
+        : kp(s.kp)
         , ki(s.ki)
         , kd(s.kd)
         , outputMin(s.outputMin)
@@ -63,7 +61,7 @@ public:
         , integratedErrorMin(0)
         , tolerance(s.tolerance)
     {
-        assert(dt > 0 && kp >= 0 && ki >= 0 && kd >= 0);
+        assert(kp >= 0 && ki >= 0 && kd >= 0);
         if (ki > 0) {
             integratedErrorMax = outputMax / ki;
             integratedErrorMin = outputMin / ki;
@@ -73,10 +71,21 @@ public:
     void setSetpoint(float _setpoint, float _tolerance) {
         setpoint  = _setpoint;
         tolerance = _tolerance;
+
+        _setpointUpper = setpoint + tolerance;
+        _setpointLower = setpoint - tolerance;
     }
 
     bool hasReachedSetpoint() {
-        return abs((prevMeasured - setpoint) / setpoint) <= tolerance;
+        return abs(prevMeasured - setpoint) <= tolerance;
+    }
+
+    bool isGreaterThanSetpoint() {
+        return prevMeasured >= _setpointLower;
+    }
+
+    bool isLessThanSetpoint() {
+        return prevMeasured <= _setpointUpper;
     }
 
     void clearPreviousResults() {
@@ -87,28 +96,32 @@ public:
 
     float compute(float measured) {
         float err = setpoint - measured;
-        float integ = err * dt;
-        float deriv;
+        float deriv = 0;
 
-        if (prevError != 0)
-            deriv = (err - prevError) / dt;
+        integratedError += err;
+        if (abs(integratedError) > integratedErrorMax) {
+            integratedError = integratedError > 0 ? integratedErrorMax : -1 * integratedErrorMax;
+        }
 
-        if (abs(integratedError + integ) > integratedErrorMin && abs(integratedError + integ) < integratedErrorMax)
-            integratedError += integ;
+        if (prevError != 0) {
+            deriv = err - prevError;
+            if (integratedError < 0)
+                deriv *= -1;
+        }
 
         float computation = (err * kp) + (integratedError * ki) + (deriv * kd);
 
         int sgn = computation < 0 ? -1 : 1; // preserve sign in case of saturation
 
         if (abs(computation) > outputMax)
-            computation = outputMax;
+            computation = outputMax * sgn;
         else if (abs(computation) < outputMin)
-            computation = outputMin;
+            computation = outputMin * sgn;
 
         prevError = err;
         prevMeasured = measured;
 
-        return computation * sgn;
+        return computation;
     }
 };
 
