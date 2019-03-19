@@ -1,5 +1,13 @@
 from pq import PriorityQueue
 
+
+class Node(object):
+    def __init__(self, x, y, cost, parent):
+        x = x
+        y = y
+        parent = parent
+        cost = cost
+
 def a_star_path(grid, start, goal):
     came_from = a_star_search(grid, start, goal)
     return reconstruct_path(came_from, start, goal)
@@ -27,20 +35,14 @@ def a_star_search(grid, start, goal):
                 cost_so_far[nxt] = new_cost
                 priority = new_cost + heuristic(goal, nxt)
 
-                # try to update test grid to see it move
-                show_frontier(nxt)
-                # ----
+                x, y = nxt
+                grid[x][y] = priority
 
                 frontier.put(nxt, priority)
                 came_from[nxt] = current
 
+    print(came_from)
     return came_from
-
-
-# make a third display to show it thinking??????
-# nah just do what you said you'd do in the comments on PR
-def show_frontier(coordinate):
-    pass
 
 def heuristic(a, b):
     (x1, y1) = a
@@ -60,9 +62,6 @@ def reconstruct_path(came_from, start, goal):
         path.append(current)
         current = came_from[current]
 
-    # optional, probably don't want this, if path is a stack,
-    # then just pop in O(1)
-
     return path
 
 def neighbours(grid, pos):
@@ -72,8 +71,6 @@ def neighbours(grid, pos):
     left_boundary = 0
     bottom_boundary = len(grid) - 1
     right_boundary = len(grid[0]) - 1
-
-    # use a lambda with a filter here instead possibly??
 
     if pos[1] > top_boundary: # above
         n.append((pos[0], pos[1]-1))
@@ -86,13 +83,13 @@ def neighbours(grid, pos):
 
     return n
 
-# gr = [[0 for i in range(6)] for i in range(6)]
-# start = (3, 5)
-# end = (0, 0)
+gr = [[0 for i in range(6)] for i in range(6)]
+start = (3, 5)
+end = (0, 0)
 
-# p = a_star_path(gr, start, end)
-# print(p)
+p = a_star_path(gr, start, end)
+print(p)
 
-# import pandas
-# pa = pandas.DataFrame(gr)
-# print(pa)
+import pandas
+
+print(pandas.DataFrame(gr))

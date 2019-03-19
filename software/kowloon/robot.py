@@ -10,7 +10,7 @@ class Robot(object):
     def __init__(self):
         self.player = pygame.image.load('images/mudkip.png').convert_alpha()
         self.pos = (map_width // 2, map_length - 1)
-        self.map = build_map()
+        self.map = tile_map
 
     def plot_map(self):
         for row in range(map_length):
