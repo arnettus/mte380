@@ -24,6 +24,7 @@ derived from this software without specific prior written permission.
  #include "WProgram.h"
 #endif
 
+#include <RollingAverage.h>
 
 // Defines
 #define TFMINI_BAUDRATE   115200
@@ -42,17 +43,20 @@ derived from this software without specific prior written permission.
 #define ERROR_SERIAL_BADCHECKSUM          2
 #define ERROR_SERIAL_TOOMANYTRIES         3
 #define MEASUREMENT_OK                    10
+#define STOPPED                           69
 
 
 //
 // Driver Class Definition
 //
-class TFMini {
+class TFMiniLidar {
   public: 
-    TFMini(void);
+    TFMiniLidar(int windowSize);
 
     // Configuration
-    boolean begin(Stream* _streamPtr);
+    boolean init(Stream* _streamPtr);
+    void start();
+    void stop();
     void setSingleScanMode();
     
     // Data collection
@@ -65,10 +69,12 @@ class TFMini {
     int state;
     uint16_t distance;
     uint16_t strength;
+    RollingAverage<uint16_t> averageDistance;
     
     // Low-level communication
     void setStandardOutputMode();
     void setConfigMode();
+    void exitConfigMode();
     int takeMeasurement();
     
 };

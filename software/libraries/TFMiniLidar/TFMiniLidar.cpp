@@ -18,32 +18,56 @@ The names of the contributors may not be used to endorse or promote products
 derived from this software without specific prior written permission.
 */
 
-#include "TFMini.h"
+#include "TFMiniLidar.h"
 
 // Constructor
-TFMini::TFMini() { 
+TFMiniLidar::TFMiniLidar(int windowSize) : averageDistance(windowSize){ 
   // Empty constructor
 }
 
 
-boolean TFMini::begin(Stream* _streamPtr) {
+boolean TFMiniLidar::init(Stream* _streamPtr) {
   // Store reference to stream/serial object
-  streamPtr = _streamPtr;
+  streamPtr = _streamPtr;  
+  return true;
+}
 
+void TFMiniLidar::start(){
   // Clear state
+  averageDistance.reset();
+  Serial.print("Current average: ");
+  Serial.println(averageDistance.read());
+  delay(5000);
   distance = -1;
   strength = -1;
   state = READY;
   
   // Set standard output mode
   setStandardOutputMode();
-  
-  return true;
 }
 
+void TFMiniLidar::stop() {
+  // Set standard output mode
+  setSingleScanMode();
+
+  // Clear any left over Serial data and then close lines
+  //while(streamPtr->read() != -1){
+  //}
+  while (streamPtr->available() > 0) {
+    streamPtr->read();
+    Serial.println("YE");
+  }
+
+  // Set stopped state
+  state = STOPPED;
+}
 
 // Public: The main function to measure distance. 
-uint16_t TFMini::getDistance() {
+uint16_t TFMiniLidar::getDistance() {
+  if (state == STOPPED){
+    Serial.println("ERROR_SERIAL_STOPPED");
+    return -1;
+  }
   int numMeasurementAttempts = 0;
   while (takeMeasurement() != 0) {
     numMeasurementAttempts += 1;
@@ -52,7 +76,7 @@ uint16_t TFMini::getDistance() {
       Serial.println ("Last error:");
       if (state == ERROR_SERIAL_NOHEADER)     Serial.println("ERROR_SERIAL_NOHEADER");
       if (state == ERROR_SERIAL_BADCHECKSUM)  Serial.println("ERROR_SERIAL_BADCHECKSUM");
-      if (state == ERROR_SERIAL_TOOMANYTRIES) Serial.println("ERROR_SERIAL_TOOMANYTRIES");      
+      if (state == ERROR_SERIAL_TOOMANYTRIES) Serial.println("ERROR_SERIAL_TOOMANYTRIES");    
       
       state = ERROR_SERIAL_TOOMANYTRIES;
       distance = -1;
@@ -62,20 +86,21 @@ uint16_t TFMini::getDistance() {
   }
 
   if (state == MEASUREMENT_OK) {
-    return distance;
+    averageDistance.add(distance);
+    return averageDistance.read();
   } else {
-    return -1;
+    return averageDistance.read();
   }
 }
 
 // Public: Return the most recent signal strength measuremenet from the TF Mini
-uint16_t TFMini::getRecentSignalStrength() {
+uint16_t TFMiniLidar::getRecentSignalStrength() {
   return strength;
 }
 
 
 // Private: Set the TF Mini into the correct measurement mode
-void TFMini::setStandardOutputMode() {
+void TFMiniLidar::setStandardOutputMode() {
   // Set to "standard" output mode (this is found in the debug documents)
   streamPtr->write((uint8_t)0x42);
   streamPtr->write((uint8_t)0x57);
@@ -88,7 +113,7 @@ void TFMini::setStandardOutputMode() {
 }
 
 // Set configuration mode
-void TFMini::setConfigMode() {
+void TFMiniLidar::setConfigMode() {
   // advanced parameter configuration mode
   streamPtr->write((uint8_t)0x42);
   streamPtr->write((uint8_t)0x57);
@@ -100,8 +125,21 @@ void TFMini::setConfigMode() {
   streamPtr->write((uint8_t)0x02);  
 }
 
+// Exit configuration mode
+void TFMiniLidar::exitConfigMode() {
+  // advanced parameter configuration mode
+  streamPtr->write((uint8_t)0x42);
+  streamPtr->write((uint8_t)0x57);
+  streamPtr->write((uint8_t)0x02);
+  streamPtr->write((uint8_t)0x00);
+  streamPtr->write((uint8_t)0x00);
+  streamPtr->write((uint8_t)0x00);
+  streamPtr->write((uint8_t)0x00);
+  streamPtr->write((uint8_t)0x02);  
+}
+
 // Set single scan mode (external trigger)
-void TFMini::setSingleScanMode() {
+void TFMiniLidar::setSingleScanMode() {
   setConfigMode();
   // setting trigger source to external
   streamPtr->write((uint8_t)0x42);
@@ -112,10 +150,11 @@ void TFMini::setSingleScanMode() {
   streamPtr->write((uint8_t)0x00);
   streamPtr->write((uint8_t)0x00);
   streamPtr->write((uint8_t)0x40);
+  exitConfigMode();
 }
 
 // Send external trigger
-void TFMini::externalTrigger() {
+void TFMiniLidar::externalTrigger() {
   setConfigMode();      
   // send trigger
   streamPtr->write((uint8_t)0x42);
@@ -129,7 +168,7 @@ void TFMini::externalTrigger() {
 }
 
 // Private: Handles the low-level bits of communicating with the TFMini, and detecting some communication errors.
-int TFMini::takeMeasurement() {
+int TFMiniLidar::takeMeasurement() {
   int numCharsRead = 0;
   uint8_t lastChar = 0x00;  
   

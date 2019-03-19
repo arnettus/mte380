@@ -37,17 +37,17 @@ SoftwareSerial mySerial(10, 11);      // Uno RX (TFMINI TX), Uno TX (TFMINI RX)
 TFMini tfmini;
 
 void setup() {
-  // Step 1: Initialize hardware serial port (serial debug port)
+  // Step 1: Initialise hardware serial port (serial debug port)
   Serial.begin(115200);
   // wait for serial port to connect. Needed for native USB port only
   while (!Serial);
      
-  Serial.println ("Initializing...");
+  Serial.println ("Initialising...");
 
-  // Step 2: Initialize the data rate for the SoftwareSerial port
+  // Step 2: Initialise the data rate for the SoftwareSerial port
   mySerial.begin(TFMINI_BAUDRATE);
 
-  // Step 3: Initialize the TF Mini sensor
+  // Step 3: Initialise the TF Mini sensor
   tfmini.begin(&mySerial);    
 }
 
