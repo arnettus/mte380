@@ -1,24 +1,34 @@
 #include "Robot.h"
 
-Robot::Robot() :
+Robot::Robot(lidarCapacity, leftFlamePin, rightFlamePin) :
     st(PATH_PLAN_SURVEY_A),
     prevSt(STRAIGHT),
     goals(GOAL_CAP),
     psoi(POI_CAP),
     pos(START_X, START_Y),
     ori(NORTH),
-    lidar(8)
+    lidar(lidarCapacity),
+    leftFlame(leftFlamePin),
+    rightFlamePin(rightFlamePin),
+    fan(fanPin)
 {
     initializeGrid();
 
-    // Initialize survey mode properly.
     goals.push(pos);
-
-    // The target angle will never change because
-    // we only want to turn 90 per turn.
     targetAngle = STANDARD_TARGET_ANGLE;
-
     missionCompleted = false;
+}
+
+void Robot::initializeSensors() {
+    initializeMotors();
+    initializeFlame();
+    initializeFireFighter();
+    initializeUltrasonic();
+    initializeLidar();
+    initializeGravity();
+    initializeColor();
+    initializeIMU();
+    initializeLED();
 }
 
 void Robot::go() {
@@ -66,56 +76,36 @@ void Robot::go() {
     }
 }
 
-void Robot::initializeSensors() {
-    initializeMotors();
-    initializeFlame();
-    initializeFan();
-    initializeUltrasonic();
-    initializeLidar();
-    initializeGravity();
-    initializeColor();
-    initializeIMU();
-    initializeLED();
+void Robot::initializeFireFighter() {
+    fan.Setup();
 }
 
-void Robot::initializeFlame() {
-
+void Robot::shutDownFireFighter() {
+    fan.Shutdown();
 }
 
 void Robot::initializeFan() {
     fan.Setup();
 }
 
-// This version of PATH_PLAN_SURVEY_A does not rely on turns
-// to find points of interest. Rather, ultrasonics try to cover
-// the distance.
 void Robot::pathPlanSurveyAState() {
     halt();
 
-    // Differed from blackboard -> you should first check if your goals
-    // are empty. Then check if you just stopped at your goal.
     if(goals.isEmpty()) {
         if(isOnRow(LAST_ROW)) {
             if(surveyBEnabled) {
                 st = PATH_PLAN_SURVEY_B;
             } else {
                 st = PATH_PLAN;
-
-                // Differed from blackboard -> this needs to set up path_plan right?
                 computeNextPOIGoal();
             }
         } else {
             computeNextSurveyAGoal();
         }
     } else if(prevSt == STRAIGHT && isAtLastGoal()) {
-        // Differed from blackboard -> you only need to locate POI and
-        // check for fire when you know you're at your row goal. As
-        // opposed to every time you enter this state. The other times
-        // you can enter this state are when you need to dodge a water
-        // tile in front of you during survey.
-
         emptyGoals();
         locatePOI();
+
         if(isFireAlive) checkAndKillFire();
     } else {
         if(isAtGoal()) removeGoal();
@@ -164,7 +154,7 @@ void Robot::houseState() {
         targetDistToGoal = HOUSE_PROXIMITY;
 
         st = STRAIGHT;
-    } else { // This house has been completed, move on to next one.
+    } else {
         missionCompleted = false;
         computeNextPOIGoal();
 
@@ -176,13 +166,8 @@ void Robot::houseState() {
 
 void Robot::straightState() {
     if(prevSt != STRAIGHT) {
-        // Store previous state so you can return
-        // to it when you hit your target distance.
         bufSt = prevSt;
 
-        // initialDistFromStopPos is based on lidar reading
-        // from stop state. targetDistToGoal is based on
-        // distance to location of goal on grid.
         distTravelled = 0;
         setInitialDistFromStopPos();
         tilesPrevAdvanced = 0;
@@ -203,10 +188,6 @@ void Robot::turnLeftState() {
 
         turnLeft();
     } else {
-        // Differed from blackboard -> commented localize out, we only want to do
-        // imu localization right???
-        // localize();
-
         if(angleTravelled >= targetAngle) st = bufSt;
     }
 
@@ -220,11 +201,6 @@ void Robot::turnRightState() {
 
         turnRight();
     } else {
-        // Differed from blackboard -> commented localize out, we only want to do
-        // imu localization right???
-        // localize();
-
-        // imuLocalize();
         if(angleTravelled == targetAngle) st = bufSt;
     }
 
@@ -273,7 +249,6 @@ bool Robot::isOnRow(int y) {
     return pos.y == y;
 }
 
-// Turn the robot towards next goal's position if needed.
 bool Robot::changedStateToTurnTowardsNextGoal() {
     Coordinate nextGoal = goals.peek();
     bool turned = false;
@@ -334,27 +309,34 @@ void Robot::updateCurrentPosition() {
     }
 }
 
-// Not implemented yet:
+// Check all your flame sensors. Rotate in direction of fire.
+void Robot::checkAndKillFire() {
+    bool flameOnRight = rightFlame.isFlameInSight();
+    bool flameOnLeft = leftFlame.isFlameInSight();
 
-// Wait to figure out ultrasonics and flame for these two:
+    if(flameOnRight || flameOnLeft){
+        if(flameOnRight) turnRight();
+        else turnLeft();
+
+        fan.TurnOn();
+        delay(FIRE_FIGHTING_TIME);
+        fan.TurnOff();
+        fan.Shutdown()
+        isFireAlive = false;
+
+        if(flameOnRight) turnLeft();
+        else turnRight();
+    }
+}
 
 // Determine whether you're looking at a point of interest
 // with your side-view ultrasonics and front view laser. If so, fill psoi stack.
-void Robot::locatePOI() {}
+void Robot::locatePOI() {
 
-// Check all your flame sensors. Rotate in direction of fire.
-// Turn on fan.
-void Robot::checkAndKillFire() {
-    if flame detected{
-        rotate
-        turn on fan
-
-        stay in while loop until flame is gone, turn off flag fireIsAlive
-
-        turn off fan
-        rotate back
-    }
 }
+
+
+// Not implemented yet:
 
 // Wait to figure out motors for these four.
 

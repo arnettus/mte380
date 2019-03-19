@@ -73,7 +73,7 @@ Motors::Motors(): _m1Enc(M1_ENCA, M1_ENCB), _m2Enc(M2_ENCA, M2_ENCB){
     pinMode(M3_DIR, OUTPUT);
     pinMode(M3_EN, OUTPUT);
     pinMode(M4_DIR, OUTPUT);
-    pinMode(M4_EN, OUTPUT); 
+    pinMode(M4_EN, OUTPUT);
 
     // _m1Enc = Encoder(M1_ENCA, M1_ENCB);
     // _m2Enc = Encoder(M2_ENCA, M2_ENCB);

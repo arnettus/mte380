@@ -7,6 +7,7 @@
 #include <TFLidar.h>
 #include <Flame.h>
 #include <Motors.h>
+#include <Fan.h>
 
 const int MAP_WIDTH = 6;
 const int MAP_HEIGHT = 6;
@@ -28,9 +29,18 @@ const int HOUSE_PROXIMITY = 5; // cm
 const int NEGATIVE_HOUSE_PROXIMITY = 5; // cm
 const int STANDARD_TARGET_ANGLE = 90; // deg
 
+const int FIRE_FIGHTING_TIME = 200;
+
 class Robot {
   public:
-    Robot();
+    Robot(
+        int lidarCapacity,
+        int leftFlameSensorPin,
+        int rightFlameSensor,
+        int fanPin
+    );
+
+    void initializeSensors();
     void go();
 
   private:
@@ -75,7 +85,12 @@ class Robot {
         WEST = 270
     };
 
+    // Sensors
     TFLidar lidar;
+
+    flameLeft Flame;
+    flameRight Flame;
+    fan Fan;
 
     Tile grid[MAP_WIDTH][MAP_HEIGHT];
 
@@ -103,7 +118,7 @@ class Robot {
 
     // Initialization
     void initializeGrid();
-    void initializeFlame();
+    void initializeFireFighter();
     void initializeUltrasonic();
     void initializeLidar();
     void initializeGravity();

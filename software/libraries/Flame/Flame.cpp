@@ -9,6 +9,16 @@ int Flame::readFlame() {
     return analogRead(pin);
 }
 
-bool Flame::isFlameInSight() {
-    return analogRead(pin) <= IN_RANGE;
+int Flame::readFlameAverage(int numSamples) {
+    long sum = 0;
+    for(int i = 0; i < numSamples; i++){
+        sum += readFlame();
+    }
+
+    return sum / numSamples;
+}
+
+bool Flame::isFlameInSight(bool useAverage, int numSamples) {
+    if(useAverage) return readFlameAverage(numSamples) <= IN_RANGE;
+    return readFlame() <= IN_RANGE;
 }
