@@ -15,9 +15,13 @@ long Ultrasonic::ReadDistance() {
     digitalWrite(trigPin_, HIGH);
     delayMicroseconds(10);
     digitalWrite(trigPin_, LOW);
+    return (pulseIn(echoPin_, HIGH)/2) / 29.1; // returns cm value
+}
 
-    // cm
-    // return (pulseIn(echoPin_, HIGH)/2) / 29.1;
-
-    return pulseIn(echoPin_, HIGH);
+long Ultrasonic::ReadAverageDistance(int numSamples){
+    long sum = 0;
+    for(int i = 0; i < numSamples; i++){
+        sum += Ultrasonic::ReadDistance();
+    }
+    return sum / numSamples;
 }

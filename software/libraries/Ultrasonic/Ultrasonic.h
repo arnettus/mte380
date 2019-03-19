@@ -4,14 +4,16 @@
 #include <Arduino.h>
 
 class Ultrasonic {
-private:
-    const int trigPin_;
-    const int echoPin_;
-
-public:
-    Ultrasonic(int trigPin, int echoPin);
-
-    long ReadDistance();
+    private:
+        // Pins
+        const int trigPin_;
+        const int echoPin_;
+    public:
+        // Constructor
+        Ultrasonic(int trigPin, int echoPin);
+        // Methods
+        long ReadDistance();
+        long ReadAverageDistance(int numSamples);
 };
 
 #endif
