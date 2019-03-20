@@ -1,6 +1,6 @@
 #include <Motors.h>
 
-// Results => front left: 210, rear left: 230, front right: 230, rear right: 210
+// Results => 220 all the way round
 
 enum Direction {
     W,
