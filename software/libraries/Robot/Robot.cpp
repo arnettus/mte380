@@ -452,14 +452,18 @@ void Robot::inidicateYellowHouse() {
     digitalWrite(yellowHouseLed, HIGH);
 }
 
-// not implemented yet:
-
 // Wait to finish path planning for these two:
 // Tells you to move to the row above you.
-void Robot::computeNextSurveyAGoal() {}
+void Robot::computeNextSurveyAGoal() {
+
+}
 
 // The actual path planning entry function.
-void Robot::computeNextPOIGoal() {}
+void Robot::computeNextPOIGoal() {
+
+}
 
 // Hope that we never have to actually implement this.
-void Robot::pathPlanSurveyBState() {}
+void Robot::pathPlanSurveyBState() {
+
+}
