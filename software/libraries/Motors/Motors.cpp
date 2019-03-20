@@ -140,3 +140,19 @@ void Motors::TurnRight(int fl, int rl, int fr, int rr) {
     Motors::_DriveFrontRightREV(fr); // M1
     Motors::_DriveRearRightREV(rr); // M3
 }
+
+int Motors::GetMotor1Enc(){
+    return(_m1Enc.read());
+}
+
+int Motors::GetMotor2Enc(){
+    return(_m2Enc.read());
+}
+
+void Motors::SetMotor1Enc(int val){
+    _m1Enc.write(val);
+}
+
+void Motors::SetMotor2Enc(int val){
+    _m2Enc.write(val);
+}
