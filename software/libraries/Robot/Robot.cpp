@@ -458,16 +458,152 @@ void Robot::computeNextSurveyAGoal() {
 
 }
 
+main_grid = [
+    ["", "CT", "", "", "", ""],
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""]
+]
+
 // The actual path planning entry function.
 void Robot::computeNextPOIGoal() {
-
+    goals = pathPlan(psoi.peek());
 }
 
-void Robot::pathPlan(end) {
+Stack<Coordinate> Robot::pathPlan(Coordinate e) {
+    Node costMap[MAP_WIDTH][MAP_HEIGHT];
 
+    // consider making this a member variable, you flush it every time, save memory
+    // use pointers to nodes instead??? probably should eh ....
+
+    PriorityQueue<Node> frontier = PriorityQueue<Node>(compare);
+    Node start = {Coordinate(pos.x, pos.y)};
+    start.seen = true;
+    frontier.push(start);
+
+    costMap[start.self.y][start.self.y] = start;
+    initialOrientationCheck = true;
+
+    while(!frontier.isEmpty()) {
+        Node current = frontier.pop();
+
+        if(current.self == e) {
+            break;
+        }
+
+        // get valid neighbours
+        Stack<Node> neighbours(5);
+
+        int currX = current.self.x;
+        int currY = current.self.y;
+
+        if(currY > 0) {
+            if(grid[currY-1][currX]) != WATER):
+                neighbours.push(costMap[currY-1][currX]);
+        }
+        if(currY < MAP_HEIGHT-1) {
+            if(grid[currY+1][currX]) != WATER):
+                neighbours.push(costMap[currY+1][currX]);
+        }
+        if(currX > 0) {
+            if(grid[currY][currX-1]) != WATER):
+                neighbours.push(costMap[currY][currX-1]);
+        }
+        if(currX < MAP_WIDTH-1) {
+            if(grid[currY][currX+1]) != WATER):
+                neighbours.push(costMap[currY][currX+1]);
+        }
+
+        // iterate over each neighbour
+        while(!neighbours.isEmpty()) {
+            Node nxt = neighbours.pop();
+
+            // travel cost + turn cost
+            int newCost = 1 +
+                current.cost +
+                turnCost(&firstNodeCase, currParent.self, curr.self, nxt.self) +
+                tileCost(grid[nxt.self.y][nxt.self.x]);
+
+            if(nxt.seen == false || newCost < nxt.cost) {
+                costMap[nxt.self.y][nxt.self.x].cost = newCost;
+                costMap[nxt.self.y][nxt.self.x].priority = newCost + heuristic(e, nxt.self);
+                costMap[nxt.self.y][nxt.self.x].parent = current;
+                costMap[nxt.self.y][nxt.self.x].seen = true;
+
+                frontier.push(costMap[nxt.self.y][nxt.self.x]);
+            }
+        }
+    }
+
+    // post process here, go backwards in costMap
+    Node focus = costMap[e.y][e.x];
+    Direction focusDir = Nothing; // have an enum value for no direction!!!
+    Stack<Coordinate> path;
+
+    // iterate back to your starting position
+    while(!(focus.self == pos)){
+        p = costMap[focus.self.y][focus.self.y].parent
+        Direction nextDir = dirFromParent(p.self, focus.self)
+
+        if(nextDir != focusDir) {
+            path.push(focus.self)
+        }
+
+        focus = p;
+        focusDir = nextDir;
+    }
+
+    return path;
 }
 
-// Hope that we never have to actually implement this.
-void Robot::pathPlanSurveyBState() {
+bool compare(Node a, Node b) {
+  return a.priority < b.priority;
+}
 
+int heuristic(Coordinate a, Coordinate b) {
+    return abs(a.x - b.x) + abs(a.y - b.y)
+}
+
+int turnCost(bool *firstNodeCase, Coordinate currParent, Coordinate curr, Coordinate nxt) {
+    Direction orientation;
+
+    if(*firstNodeCase) {
+        *firstNodeCase = false;
+        orientation = nav.getCurrentDirection();
+    } else {
+        orientation = dirFromParent(currParent, curr);
+    }
+
+    switch (orientation) {
+        case North:
+            if nxt.y < curr.y: return 0;
+        case South:
+            if nxt.y > curr.y: return 0;
+        case East:
+            if nxt.x > curr.x: return 0;
+        case West:
+            if nxt.x < curr.x: return 0;
+    }
+
+    return 1; // whatever the cost of turning is :(
+}
+
+Direction dirFromParent(Coordinate parent, Coordinate current) {
+    if(parent.y > current.y): return North;
+    if(parent.y < current.y): return South;
+    if(parent.x > current.x): return West;
+    if(parent.x < current.x): return East;
+}
+
+int tileCost(Tile t) {
+    switch (t) {
+        case SAND:
+            return 2;
+        case GRAVEL:
+            return 3;
+    }
+
+    return 1;
 }

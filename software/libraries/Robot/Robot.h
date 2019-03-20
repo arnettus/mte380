@@ -82,6 +82,14 @@ class Robot {
         CANDLE,
     };
 
+    struct Node {
+        Coordinate self;
+        Coordinate parent;
+        bool seen = false;
+        int cost = 0;
+        int priority = 0;
+    };
+
     // Sensors
     TFLidar lidar;
     flameLeft Flame;
@@ -178,6 +186,8 @@ class Robot {
 
     // Distances
     int numTilesAway();
+
+    int surveyCounter;
 };
 
 #endif

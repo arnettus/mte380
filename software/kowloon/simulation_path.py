@@ -136,7 +136,7 @@ def reconstruct_path(grid, end):
     return path
 
 start = (3, 0)
-end = (3, 1)
+end = (3, 5)
 
 main_grid = [
     ["", "CT", "", "", "", ""],

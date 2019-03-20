@@ -10,6 +10,7 @@ enum Direction {
     East,
     South,
     West,
+    Nothing
 };
 
 class Navigator {

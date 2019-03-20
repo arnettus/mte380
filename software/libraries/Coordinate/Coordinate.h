@@ -9,7 +9,6 @@ class Coordinate {
         Coordinate(int _x, int _y);
         int x;
         int y;
-
         bool operator==(Coordinate rhs);
 };
 
