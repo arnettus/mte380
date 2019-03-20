@@ -1,7 +1,7 @@
 #include <Flame.h>
 #include <SoftwareSerial.h>
 
-Flame f(A0, A1);
+Flame f(A0);
 
 void setup() {
     Serial.begin(9600);
@@ -26,10 +26,12 @@ ISR(TIMER1_COMPA_vect) {
 
 void loop() {
    if (pollMe) {
+        Serial.println("");
         Serial.print("Extinguish?: ");
         Serial.print(f.isFlameInSight());
         Serial.print(" Reading: ");
         Serial.print(f.readFlame());
+        Serial.println("");
 
         pollMe = false;
     }
