@@ -1,7 +1,5 @@
 #include <Navigator.h>
 
-#define USE_SERIAL_INSTEAD_OF_MOTORS false
-
 Navigator nav;
 
 void setup() {
@@ -15,7 +13,8 @@ void setup() {
 }
 
 void loop() {
-    //nav.imuLoop();
-    nav.manualMode(USE_SERIAL_INSTEAD_OF_MOTORS);
+    //nav.demoIMULoop();
+    nav.demoIMULoopMagnetometer();
+    //nav.demoManualMode();
     return;
 }

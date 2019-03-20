@@ -11,6 +11,7 @@ struct PIDSettings {
     float outputMin;
     float outputMax;
     float tolerance;
+    bool  useKpOnMeasure;
 };
 
 class PID {
@@ -19,17 +20,20 @@ private:
     float ki;
     float kd;
 
-    float outputMax;
     float outputMin;
+    float outputMax;
 
     float integratedError;
-    float integratedErrorMax;
     float integratedErrorMin;
-    float prevError;
+    float integratedErrorMax;
+
     float prevMeasured;
 
+    bool  useKpOnMeasure;
+    float offsetFromFirstMeasurement;
+
     float setpoint;
-    float tolerance; // absolute tolerance for setpoint
+    float tolerance;
     float _setpointUpper;
     float _setpointLower;
 
@@ -40,9 +44,10 @@ public:
         , kd(_kd)
         , outputMin(_outputMin)
         , outputMax(_outputMax)
-        , integratedErrorMax(0)
-        , integratedErrorMin(0)
-        , tolerance(0.1)
+        , integratedError(0)
+        , tolerance(0)
+        , useKpOnMeasure(false)
+        , offsetFromFirstMeasurement(0)
     {
         assert(kp >= 0 && ki >= 0 && kd >= 0);
         if (ki > 0) {
@@ -57,9 +62,10 @@ public:
         , kd(s.kd)
         , outputMin(s.outputMin)
         , outputMax(s.outputMax)
-        , integratedErrorMax(0)
-        , integratedErrorMin(0)
+        , integratedError(0)
         , tolerance(s.tolerance)
+        , useKpOnMeasure(s.useKpOnMeasure)
+        , offsetFromFirstMeasurement(0)
     {
         assert(kp >= 0 && ki >= 0 && kd >= 0);
         if (ki > 0) {
@@ -68,12 +74,44 @@ public:
         }
     }
 
-    void setSetpoint(float _setpoint, float _tolerance) {
-        setpoint  = _setpoint;
-        tolerance = _tolerance;
+    void begin(float _setpoint, float firstMeasurement) {
+        setpoint = _setpoint;
 
         _setpointUpper = setpoint + tolerance;
         _setpointLower = setpoint - tolerance;
+
+        prevMeasured = firstMeasurement;
+
+        integratedError = 0;
+        offsetFromFirstMeasurement = 0;
+    }
+
+    float compute(float measured) {
+        float err = setpoint - measured;
+        float proportionalTerm = err;
+        
+        integratedError += err;
+        if (abs(integratedError) > integratedErrorMax)
+            integratedError = integratedError > 0 ? integratedErrorMax : -1 * integratedErrorMax;
+        else if (abs(integratedError) < integratedErrorMin)
+            integratedError = integratedError > 0 ? integratedErrorMin : -1 * integratedErrorMin;
+
+        if (useKpOnMeasure) {
+            offsetFromFirstMeasurement += measured - prevMeasured;
+            proportionalTerm = -1 * offsetFromFirstMeasurement;
+        }
+
+        float computation = (kp * proportionalTerm) + (ki * integratedError) - (kd * (measured - prevMeasured));
+        int sgn = computation < 0 ? -1 : 1;
+
+        if (abs(computation) > outputMax)
+            computation = outputMax * sgn;
+        else if (abs(computation) < outputMin)
+            computation = outputMin * sgn;
+
+        prevMeasured = measured;
+
+        return computation;
     }
 
     bool hasReachedSetpoint() {
@@ -86,42 +124,6 @@ public:
 
     bool isLessThanSetpoint() {
         return prevMeasured <= _setpointUpper;
-    }
-
-    void clearPreviousResults() {
-        integratedError = 0;
-        prevError = 0;
-        prevMeasured = 0;
-    }
-
-    float compute(float measured) {
-        float err = setpoint - measured;
-        float deriv = 0;
-
-        integratedError += err;
-        if (abs(integratedError) > integratedErrorMax) {
-            integratedError = integratedError > 0 ? integratedErrorMax : -1 * integratedErrorMax;
-        }
-
-        if (prevError != 0) {
-            deriv = err - prevError;
-            if (integratedError < 0)
-                deriv *= -1;
-        }
-
-        float computation = (err * kp) + (integratedError * ki) + (deriv * kd);
-
-        int sgn = computation < 0 ? -1 : 1; // preserve sign in case of saturation
-
-        if (abs(computation) > outputMax)
-            computation = outputMax * sgn;
-        else if (abs(computation) < outputMin)
-            computation = outputMin * sgn;
-
-        prevError = err;
-        prevMeasured = measured;
-
-        return computation;
     }
 };
 
