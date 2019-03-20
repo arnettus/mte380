@@ -463,6 +463,10 @@ void Robot::computeNextPOIGoal() {
 
 }
 
+void Robot::pathPlan(end) {
+
+}
+
 // Hope that we never have to actually implement this.
 void Robot::pathPlanSurveyBState() {
 
