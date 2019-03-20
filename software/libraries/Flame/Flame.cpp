@@ -1,10 +1,14 @@
 #include "Flame.h"
 #include <Arduino.h>
 
-const int IN_RANGE = 1010;
+const int IN_RANGE = 1000;
 
-Flame::Flame(int _leftPin, int _rightPin) : leftPin(_leftPin), rightPin(_rightPin) {}
+Flame::Flame(int _pin) : pin(_pin) {}
+
+int Flame::readFlame() {
+    return analogRead(pin);
+}
 
 bool Flame::isFlameInSight() {
-    return (analogRead(leftPin) < IN_RANGE) || (analogRead(rightPin) < IN_RANGE);
+    return analogRead(pin) <= IN_RANGE;
 }
