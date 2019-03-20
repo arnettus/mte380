@@ -7,10 +7,13 @@ void setup() {
     lidar.init(&Serial3);
     delay(5000);
     Serial.println("Initialised");
+    lidar.start();
 }
 
 void loop() {
-  lidar.start();
+  Serial.println(lidar.getDistance());
+  delay(50);
+  /*lidar.start();
   Serial.println("ROLLING AVG START");
   for (int i = 0; i < 75; i++){
       Serial.print("Continuous: ");
@@ -19,5 +22,5 @@ void loop() {
   }
   Serial.println("Stopped reading");
   lidar.stop();
-  delay(3000);
+  delay(3000);*/
 }

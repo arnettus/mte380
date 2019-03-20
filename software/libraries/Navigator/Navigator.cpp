@@ -51,7 +51,7 @@ void Navigator::turnLeft() {
 
         if (currentAngle < 180)
             currentAngle += 360;
-        
+
         pidl.begin(targetAngle, currentAngle);
         float speed = 0;
 
@@ -140,7 +140,7 @@ void Navigator::turnRight() {
                 Serial.println(s.orientation.x);
                 break;
             }
-            
+
             speed = pidr.compute(s.orientation.x);
             printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
 
@@ -259,14 +259,14 @@ void Navigator::printIMUOffsets() {
     if (!st)
         Serial.println("Unable to read the offsets");
 
-    snprintf(msg, 128, "a_x: %d, a_y: %d, a_z: %d, a_r: %d\ng_x: %d, g_y: %d, g_z: %d\nm_x: %d, m_y: %d:, m_z: %d, m_r: %d\n", 
-            offsets.accel_offset_x, offsets.accel_offset_y, offsets.accel_offset_z, offsets.accel_radius, 
+    snprintf(msg, 128, "a_x: %d, a_y: %d, a_z: %d, a_r: %d\ng_x: %d, g_y: %d, g_z: %d\nm_x: %d, m_y: %d:, m_z: %d, m_r: %d\n",
+            offsets.accel_offset_x, offsets.accel_offset_y, offsets.accel_offset_z, offsets.accel_radius,
             offsets.gyro_offset_x, offsets.gyro_offset_y, offsets.gyro_offset_z,
-            offsets.mag_offset_x, offsets.mag_offset_y, offsets.mag_offset_z, offsets.mag_radius); 
+            offsets.mag_offset_x, offsets.mag_offset_y, offsets.mag_offset_z, offsets.mag_radius);
 
     Serial.println(msg);
 }
-
+#include <TFMiniLidar.h>
 
 void Navigator::demoManualMode() {
     enum KeyState {
@@ -280,6 +280,11 @@ void Navigator::demoManualMode() {
 
     KeyState ks = Q;
     char key;
+
+    TFMiniLidar l(3);
+    l.init(&Serial3);
+    uint16_t d = 0;
+    uint16_t dd = 0;
 
     Serial.println("Entered manual mode.");
 
@@ -335,8 +340,48 @@ void Navigator::demoManualMode() {
                     Serial.println(s.orientation.x);
                 case 'f':
                     readMagnetometer();
-                default:
-                    break;
+		    break;
+		case 'i':
+            Serial.println("Start start");
+            l.start();
+            Serial.println("Start end");
+            d = l.getDistance();
+            dd = 0;
+            Serial.print("Initial distance: ");
+            Serial.println(d);
+            goForward();
+            while (dd < 30) {
+                dd = d - l.getDistance();
+            }
+            halt();
+            Serial.print("Final reading: ");
+            Serial.println(l.getDistance());
+            l.stop();
+            ks = Q;
+		    break;
+		case 'k':
+            l.start();
+            d = l.getDistance();
+            dd = 0;
+            Serial.print("Initial reading: ");
+            Serial.println(d);
+            goReverse();
+            while (dd < 30) {
+                dd = l.getDistance() - d;
+            }
+            halt();
+            Serial.print("Final reading: ");
+            Serial.println(l.getDistance());
+            l.stop();
+            ks = Q;
+		    break;
+        case 'o':
+            l.start();
+            Serial.println(l.getDistance());
+            l.stop();
+            break;
+        default:
+            break;
             }
         }
         delay(50);
