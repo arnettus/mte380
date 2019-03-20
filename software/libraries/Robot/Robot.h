@@ -186,8 +186,6 @@ class Robot {
 
     // Distances
     int numTilesAway();
-
-    int surveyCounter;
 };
 
 #endif

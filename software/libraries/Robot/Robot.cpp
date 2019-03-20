@@ -45,6 +45,7 @@ Robot::Robot(
     checkedForObjectInFront = false;
     waterDetected = false;
     reverse = false;
+    shiftedLeftDuringSurvey = false;
 }
 
 void Robot::initializeSensors() {
@@ -452,22 +453,43 @@ void Robot::inidicateYellowHouse() {
     digitalWrite(yellowHouseLed, HIGH);
 }
 
-// Wait to finish path planning for these two:
-// Tells you to move to the row above you.
 void Robot::computeNextSurveyAGoal() {
-
+    e = findValidEndGoal(Coordinate(pos.x, pos.y-1));
+    goals = pathPlan(e);
 }
 
-main_grid = [
-    ["", "CT", "", "", "", ""],
-    ["", "", "", "", "", ""],
-    ["", "", "", "", "", ""],
-    ["", "", "", "", "", ""],
-    ["", "", "", "", "", ""],
-    ["", "", "", "", "", ""]
-]
+Coordinate findValidEndGoal(Coordinate oneAbove) {
+    Coordinate validTile;
+    if oneAbove == FLAT {
+        validTile = oneAbove;
+    } else {
+        validTileFound = false;
+        Coordinate leftOfAbove(oneAbove.x-1, oneAbove.y);
+        Coordinate rightOfAbove(oneAbove.x+1, oneAbove.y);
 
-// The actual path planning entry function.
+        while(!validTileFound) {
+            tileToLeft = grid[leftOfAbove.y][leftOfAbove.x];
+
+            if(tileToLeft == FLAT) {
+                validTile = leftOfAbove;
+                validTileFound = true;
+            } else {
+                tileToRight = grid[rightOfAbove.y][rightOfAbove.x];
+
+                if(tileToRight == FLAT) {
+                    validTile = rightOfAbove;
+                    validTileFound = true;
+                } else {
+                    leftOfAbove = Coordinate(leftOfAbove.x-1, leftOfAbove.y);
+                    rightOfAbove = Coordinate(leftOfAbove.x-1, leftOfAbove.y);
+                }
+            }
+        }
+    }
+
+    return validTile;
+}
+
 void Robot::computeNextPOIGoal() {
     goals = pathPlan(psoi.peek());
 }
