@@ -17,7 +17,7 @@ def a_star_search(start, goal):
     start_y = start[0]
 
     aux_grid[start_x][start_y].seen = True
-    initialOrientation = "WEST"
+    initialOrientation = "NORTH"
     initialCheck = True
 
     while not frontier.empty():
@@ -111,25 +111,42 @@ def neighbours(grid, pos):
 
 def reconstruct_path(grid, end):
     current = end
+    currDir = "NONE"
     path = []
 
-    while current != None:
-        path.append(current)
-        current = grid[current[1]][current[0]].parent
+    while grid[current[1]][current[0]].parent != None:
+        par = grid[current[1]][current[0]].parent
+
+        if par[1] < current[1]:
+            nextDir = "WEST"
+        elif par[1] > current[1]:
+            nextDir = "EAST"
+        elif par[0] < current[0]:
+            nextDir = "NORTH"
+        else:
+            nextDir = "SOUTH"
+
+        if currDir != nextDir:
+            path.append(current)
+
+        current = par
+
+        currDir = nextDir
 
     return path
 
 start = (3, 0)
-end = (0, 4)
+end = (3, 1)
 
 main_grid = [
-    ["", "", "", "CT", "", ""],
-    ["", "CT", "", "", "CT", ""],
-    ["CT", "CT", "", "A", "", ""],
-    ["", "", "", "", "", "CT"],
-    ["", "CT", "", "", "CT", "A"],
-    ["", "", "CT", "", "", ""]
+    ["", "CT", "", "", "", ""],
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""]
 ]
+
 cost_grid = a_star_search(start, end)
 
 print(reconstruct_path(cost_grid, end))
