@@ -133,10 +133,10 @@ void GravitySensors::Init()
     digitalWrite(configs_[3].reset_pin, LOW);
 
     sensors_[0] = new Gravity(configs_[0]);
-    
+
     digitalWrite(configs_[1].reset_pin, HIGH);
     // delay(50);
-    
+
     sensors_[1] = new Gravity(configs_[1]);
 
     digitalWrite(configs_[2].reset_pin, HIGH);

@@ -11,7 +11,8 @@ public:
     Flame(int pin);
 
     int readFlame();
-    bool isFlameInSight();
+    int readFlameAverage(int numSamples = 100);
+    bool isFlameInSight(bool useAverage = true, int numSamples = 100);
 };
 
 #endif

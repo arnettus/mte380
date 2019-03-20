@@ -1,4 +1,5 @@
 *.swp
 *.DS_Store
 software/kowloon/venv/
-.vscode/
+.vscode
+software/.vscode

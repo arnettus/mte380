@@ -22,7 +22,7 @@ struct GravityConfig {
     int address, reset_pin, timeout, capacity;
     uint16_t sandLow, sandHigh, pitLow, pitHigh, flatLow, flatHigh;
     uint16_t gravelLow, gravelHigh;
-    //add detection thresholds, these will prolly be constant 
+    //add detection thresholds, these will prolly be constant
 };
 
 class Gravity {

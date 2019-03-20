@@ -15,6 +15,7 @@ long Ultrasonic::ReadDistance() {
     digitalWrite(trigPin_, HIGH);
     delayMicroseconds(10);
     digitalWrite(trigPin_, LOW);
+
     return (pulseIn(echoPin_, HIGH)/2) / 29.1; // returns cm value
 }
 

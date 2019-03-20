@@ -9,6 +9,6 @@ void setup() {
 
 unsigned long frequency;
 
-void loop() { 
+void loop() {
     colour.PrintRGB();
 }
