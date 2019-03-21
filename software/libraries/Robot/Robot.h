@@ -6,10 +6,8 @@
 #include <Coordinate.h>
 #include <TFLidar.h>
 #include <Flame.h>
-#include <Fan.h>
 #include <Ultrasonic.h>
 #include <Colour.h>
-#include <Navigator.h>
 #include <Gravity.h>
 #include <QueueArray.h>
 
@@ -39,6 +37,8 @@ class Robot {
   public:
     Robot(
         int lidarCapacity,
+        int leftFlameSensorPin,
+        int rightFlameSensoPin,
         int fanPin,
         int rightSonicTrigPin,
         int rightSonicEchoPin,
@@ -53,6 +53,17 @@ class Robot {
         int redHouseLed,
         int yellowHouseLed
     );
+
+    enum Tile {
+        FLAT,
+        WATER,
+        SAND,
+        GRAVEL,
+        MISSION,
+        CANDLE,
+    };
+
+    Tile grid[MAP_WIDTH][MAP_HEIGHT];
 
     void initializeSensors();
     void go();
@@ -69,17 +80,6 @@ class Robot {
         DONE
     };
 
-    // Adjust based on terrain class
-    enum Tile {
-        UNKNOWN,
-        FLAT,
-        WATER,
-        SAND,
-        GRAVEL,
-        MISSION,
-        CANDLE,
-    };
-
     struct Node {
         Coordinate self;
         Coordinate parent;
@@ -90,16 +90,11 @@ class Robot {
 
     // Sensors
     TFLidar lidar;
-    flameLeft Flame;
-    flameRight Flame;
-    fan Fan;
-    rightSonic Ultrasonic;
-    leftSonic Ultrasonic;
-    GravitySensors gravities;
-    colourSensor Colour;
-    nav Navigator;
-
-    Tile grid[MAP_WIDTH][MAP_HEIGHT];
+    Flame flameLeft ;
+    Flame flameRight;
+    Ultrasonic rightSonic;
+    Ultrasonic leftSonic;
+    Colour colourSensor;
 
     Coordinate pos;
     State st;
@@ -117,9 +112,6 @@ class Robot {
     int cLEDPin;
     int redHouseLed;
     int yellowHouseLed;
-
-    int angleTravelled;
-    int targetAngle;
 
     bool surveyBEnabled;
     bool missionCompleted;
