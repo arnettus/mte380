@@ -1,3 +1,5 @@
+#ifndef TF_MINI_LIDAR_H
+#define TF_MINI_LIDAR_H
 /*
 Arduino driver for Benewake TFMini time-of-flight distance sensor. 
 by Peter Jansen (December 11/2017)
@@ -79,3 +81,4 @@ class TFMiniLidar {
     
 };
 
+#endif
