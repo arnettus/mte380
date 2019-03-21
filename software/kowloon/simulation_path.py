@@ -10,8 +10,8 @@ class Node(object):
 def a_star_search(start, goal):
     aux_grid = [[Node() for i in range(6)] for i in range(6)]
 
-    frontier = PriorityQueue()
-    frontier.put(start, 0)
+    frontier = []
+    frontier.append(start)
 
     start_x = start[1]
     start_y = start[0]
@@ -20,8 +20,8 @@ def a_star_search(start, goal):
     initialOrientation = "NORTH"
     initialCheck = True
 
-    while not frontier.empty():
-        current = frontier.get()
+    while len(frontier):
+        current = frontier.pop(0)
 
         if current == goal: # use coordinates
             break
@@ -39,7 +39,7 @@ def a_star_search(start, goal):
 
                 priority = new_cost + heuristic(goal, nxt) # keep at manhattan distance
 
-                frontier.put(nxt, priority)
+                frontier.append(nxt)
                 aux_grid[nxt_x][nxt_y].parent = current
                 aux_grid[nxt_x][nxt_y].seen = True
 
@@ -114,6 +114,11 @@ def reconstruct_path(grid, end):
     currDir = "NONE"
     path = []
 
+    # while grid[current[1]][current[0]].parent != None:
+    #     par = grid[current[1]][current[0]].parent
+    #     path.append(par)
+    #     current = par
+
     while grid[current[1]][current[0]].parent != None:
         par = grid[current[1]][current[0]].parent
 
@@ -136,7 +141,7 @@ def reconstruct_path(grid, end):
     return path
 
 start = (3, 0)
-end = (3, 5)
+end = (0, 5)
 
 main_grid = [
     ["", "", "", "", "", ""],
