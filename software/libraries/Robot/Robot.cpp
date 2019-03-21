@@ -1,4 +1,5 @@
 #include "Robot.h"
+#include <SoftwareSerial.h>
 
 Robot::Robot(
         int lidarCapacity,
@@ -399,108 +400,155 @@ void Robot::computeNextPOIGoal() {
 StackArray<Coordinate> Robot::pathPlan(Coordinate e) {
     Node costMap[MAP_WIDTH][MAP_HEIGHT];
 
-    // consider making this a member variable, you flush it every time, save memory
-    // use pointers to nodes instead??? probably should eh ...
+    QueueArray<Coordinate> frontier;
+    costMap[pos.y][pos.x].seen = true;
+    costMap[pos.y][pos.x].cost = 0;
+    costMap[pos.y][pos.x].parent = Coordinate{pos.x, pos.y};
 
-    QueueArray<Node> frontier;
-    Node start;
-    start.self = Coordinate{pos.x, pos.y};
-    start.seen = true;
-    frontier.push(start);
-
-    costMap[start.self.y][start.self.y] = start;
-    bool firstNodeCase = true;
+    frontier.push(pos);
 
     while(!frontier.isEmpty()) {
-        Node current = frontier.pop();
+        Coordinate current = frontier.pop();
+
         // get valid neighbours
-        StackArray<Node> neighbours;
+        StackArray<Coordinate> neighbours;
 
-        int currX = current.self.x;
-        int currY = current.self.y;
+        int currX = current.x;
+        int currY = current.y;
 
-        if(current.self.x == e.x && current.self.y == e.y) {
+        if(currX == e.x && currY == e.y) {
             break;
         }
 
-        if(currY > 0) {
+        if(currY > 0) { // above
             if(!(grid[currY-1][currX]) == WATER)
-                neighbours.push(costMap[currY-1][currX]);
+                neighbours.push(Coordinate{currX, currY-1});
         }
-        if(currY < MAP_HEIGHT-1) {
+        if(currY < MAP_HEIGHT-1) { // below
             if(!(grid[currY+1][currX]) == WATER)
-                neighbours.push(costMap[currY+1][currX]);
+                neighbours.push(Coordinate{currX, currY+1});
         }
-        if(currX > 0) {
+        if(currX > 0) { // left
             if(!(grid[currY][currX-1]) == WATER)
-                neighbours.push(costMap[currY][currX-1]);
+                neighbours.push(Coordinate{currX-1, currY});
         }
-        if(currX < MAP_WIDTH-1) {
+        if(currX < MAP_WIDTH-1) { // right
             if(!(grid[currY][currX+1]) == WATER)
-                neighbours.push(costMap[currY][currX+1]);
+                neighbours.push(Coordinate{currX+1, currY});
         }
 
         // iterate over each neighbour
         while(!neighbours.isEmpty()) {
-            Node nxt = neighbours.pop();
+            Coordinate nxt = neighbours.pop();
 
-            // travel cost + turn cost
             int newCost = 1 +
-                current.cost +
-                turnCost(&firstNodeCase, current.parent, current.self, nxt.self) +
-                tileCost(grid[nxt.self.y][nxt.self.x]);
+                costMap[currY][currX].cost +
+                turnCost(costMap[current.y][current.x].parent, current, nxt);
+                // tileCost(grid[nxt.self.y][nxt.self.x]);
 
-            if(nxt.seen == false || newCost < nxt.cost) {
-                costMap[nxt.self.y][nxt.self.x].cost = newCost;
-                costMap[nxt.self.y][nxt.self.x].parent = Coordinate{currX, currY};
-                costMap[nxt.self.y][nxt.self.x].seen = true;
+            if(costMap[nxt.y][nxt.x].seen == false || newCost < costMap[nxt.y][nxt.x].cost) {
+                costMap[nxt.y][nxt.x].cost = newCost;
+                costMap[nxt.y][nxt.x].parent = Coordinate{currX, currY};
+                costMap[nxt.y][nxt.x].seen = true;
 
-                frontier.push(costMap[nxt.self.y][nxt.self.x]);
+                frontier.push(nxt);
             }
         }
     }
 
+    Serial.println("---- final cost ----");
+    Serial.println(costMap[e.y][e.x].cost);
+    // Serial.println(costMap[5][4].parent.x);
+    // Serial.println(costMap[5][4].parent.y);
+    // Serial.println(costMap[5][4].cost);
+
+
     // post process here, go backwards in costMap
-    Node focus = costMap[e.y][e.x];
+    Coordinate focus{e.x,e.y};
     Direction focusDir = Nothing;
+
     StackArray<Coordinate> path;
 
     // iterate back to your starting position
-    while(!(focus.self.x == pos.x && focus.self.y == pos.y)){
-        Coordinate p = costMap[focus.self.y][focus.self.x].parent;
-        Direction nextDir = dirFromParent(p, focus.self);
+    while(!(focus.x == pos.x && focus.y == pos.y)){
+        Coordinate p = costMap[focus.y][focus.x].parent;
 
-        if(nextDir != focusDir) path.push(focus.self);
+        Direction nextDir = dirFromParent(p, focus);
 
-        focus = costMap[p.y][p.x];
+        if(nextDir != focusDir) path.push(focus);
+
+        focus = p;
         focusDir = nextDir;
     }
 
     return path;
 }
 
-int Robot::turnCost(bool *firstNodeCase, Coordinate currParent, Coordinate curr, Coordinate nxt) {
-    Direction orientation;
+int Robot::turnCost(Coordinate currParent, Coordinate curr, Coordinate nxt) {
+    Direction o;
 
-    if(*firstNodeCase) {
-        *firstNodeCase = false;
-        orientation = navGetCurrentDirection();
+    if(currParent.x == curr.x && currParent.y == curr.y) {
+        //orientation = navGetCurrentDirection();
+        Serial.println("hdfsdkfdksf");
+        o = North;
     } else {
-        orientation = dirFromParent(currParent, curr);
+        o = dirFromParent(currParent, curr);
     }
 
-    switch (orientation) {
+    // Serial.println("this is a turn cost ------");
+
+    // Serial.print("currParent: ");
+    // Serial.print(currParent.x);
+    // Serial.print(",");
+    // Serial.print(currParent.y);
+    // Serial.print(" curr: ");
+    // Serial.print(curr.x);
+    // Serial.print(",");
+    // Serial.print(curr.y);
+    // Serial.print(" nxt: ");
+    // Serial.print(nxt.x);
+    // Serial.print(",");
+    // Serial.print(nxt.y);
+    // Serial.println("");
+
+    // Serial.println(o);
+
+    switch (o) {
         case North:
-            if(nxt.y < curr.y) return 0;
+            if(nxt.y < curr.y) {
+                Serial.println("hi north");
+                return 0;
+            }
+            break;
         case South:
-            if(nxt.y > curr.y) return 0;
+            if(nxt.y > curr.y) {
+                Serial.println("hi south");
+                return 0;
+            }
+            break;
         case East:
-            if(nxt.x > curr.x)return 0;
+            if(nxt.x > curr.x) {
+                Serial.println("hi east");
+                return 0;
+            }
+            break;
         case West:
-            if(nxt.x < curr.x) return 0;
+            if(nxt.x < curr.x) {
+                Serial.println("hi west");
+                return 0;
+            }
+            break;
+        default:
+            break;
     }
 
-    return 1;
+    int multiplier = 1;
+
+    if(grid[curr.y][curr.x] == SAND){
+        multiplier = 100;
+    }
+
+    return 1*multiplier;
 }
 
 Direction Robot::dirFromParent(Coordinate parent, Coordinate current) {

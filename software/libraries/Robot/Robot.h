@@ -68,6 +68,8 @@ class Robot {
         int yellowHouseLed
     );
 
+    StackArray<Coordinate> pathPlan(Coordinate e);
+
     enum Tile {
         FLAT,
         WATER,
@@ -77,7 +79,14 @@ class Robot {
         CANDLE,
     };
 
-    Tile grid[MAP_WIDTH][MAP_HEIGHT];
+    Tile grid[MAP_WIDTH][MAP_HEIGHT] = {
+            {FLAT, FLAT, FLAT, SAND, FLAT, FLAT},
+            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
+            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
+            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
+            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
+            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT}
+    };
 
     void initializeSensors();
     void go();
@@ -96,7 +105,6 @@ class Robot {
     };
 
     struct Node {
-        Coordinate self;
         Coordinate parent;
         bool seen = false;
         int cost = 0;
@@ -152,14 +160,12 @@ class Robot {
     void pathPlanSurveyAState();
     void pathPlanSurveyBState();
     void pathPlanState();
-    StackArray<Coordinate> pathPlan(Coordinate e);
     void straightState();
     void houseState();
     void turnLeftState();
     void turnRightState();
 
     // Path planning
-    StackArray<Coordinate> planPath(Coordinate b, Coordinate e);
 
     // Goals
     void turnTowardsNextGoal();
@@ -201,7 +207,7 @@ class Robot {
     // Distances
     int numTilesAway(int distance);
     Coordinate findValidSurveyGoal(Coordinate oneAbove);
-    int turnCost(bool *firstNodeCase, Coordinate currParent, Coordinate curr, Coordinate nxt);
+    int turnCost(Coordinate currParent, Coordinate curr, Coordinate nxt);
     Direction dirFromParent(Coordinate parent, Coordinate current);
     int tileCost(Tile t);
 };
