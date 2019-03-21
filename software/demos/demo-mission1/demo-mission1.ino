@@ -1,61 +1,67 @@
+#include <Flame.h>
 #include <SoftwareSerial.h>
-#include <Navigator.h>
+#include <Motors.h>
 #include <Fan.h>
-#include <IR.h>
 
 // constructors
-Firewall firewall;
-Navigator nav;
+Flame leftFlame(A0);
+Flame rightFlame(A1);
+Motors myMotors;
 Fan myFan;
 
 // flags
-bool checkForFlame = true;
+bool leftFlameDetected = false;
+bool rightFlameDetected = false;
+volatile bool checkForFlame = false;
 
 void setup() {
-    myFan.Setup();
-    nav.begin();
     Serial.begin(9600);
-        if (!nav.begin()) {
-        Serial.println("Navigator failed to begin");
-        while (1) {
-            delay(1000);
-        }
-    }
-    
-    Serial.println("Starting in 3 seconds...");
-    delay(3000);
-    Serial.println("Starting!");
-    nav.goForward();
+
+    // !!! pretty sure we don't need interrupts for this
+    // noInterrupts();
+    // OCR1A = 0xFFF;   // approximately every 16ms
+
+    // TCCR1A = 0;
+    // TCCR1B = (1 << WGM12)|(1 << CS11)|(1 << CS10);
+    // TCNT1 = 0;
+
+    // TIMSK1 |= _BV(OCIE1A);
+    // interrupts();
 }
+
+
+
+// ISR(TIMER1_COMPA_vect) {
+//     if (!pollMe)
+//         pollMe = true;
+// }
 
 void loop() {
    if (checkForFlame) {
-        int threshhold = 850;
-        if (firewall.ReadValue(0) <= threshhold AND firewall.ReadValue(2) <= threshhold){
+        int threshhold = 1000;
+        if (leftFlame.readFlame() <= threshhold){
             // flame detected on left!
-            Serial.print("Left flame detected at: ");
-            Serial.println(firewall.ReadValue(0), firewall.ReadValue(2));
-            nav.halt();
-            delay(1500);
-            nav.turnLeft();
-            myFan.TurnOn(Fan::MED_SPEED);
-            delay(3000);
+            myMotors.Halt();
+            delay(500);
+            myMotors.OLTurnLeft90();
+            myFan.TurnOn();
+            delay(1000);
             myFan.TurnOff();
             myFan.Shutdown();
-            nav.turnRight();
+            myMotors.OLTurnRight90();
+            checkForFlame = false;
         }
-        else if(firewall.ReadValue(1) <= threshhold AND firewall.ReadValue(3) <= threshhold){
+        else if(rightFlame.readFlame() <= threshhold){
             // flame detected on right!
-            Serial.print("Right flame detected at: ");
-            Serial.println(firewall.ReadValue(1), firewall.ReadValue(3));
-            nav.halt();
-            delay(1500);
-            nav.turnRight();
-            myFan.TurnOn(Fan::MED_SPEED);
-            delay(3000);
+            myMotors.Halt();
+            delay(500);
+            myMotors.OLTurnRight90();
+            myFan.TurnOn();
+            delay(1000);
             myFan.TurnOff();
             myFan.Shutdown();
-            nav.turnLeft();
+            myMotors.OLTurnLeft90();
+            checkForFlame = false;
         } 
     }
 }

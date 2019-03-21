@@ -62,7 +62,7 @@ void Navigator::turnLeft() {
                 currentAngle += 360;
 
             speed = pidl.compute(currentAngle);
-            //printTargetAngleSpeed(targetAngle, currentAngle, speed);
+            printTargetAngleSpeed(targetAngle, currentAngle, speed);
 
             if (speed < 0) {
                 _turnLeftMotorCommand(abs(speed));
@@ -78,12 +78,12 @@ void Navigator::turnLeft() {
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
 
             if (nextDirection == North && s.orientation.x > 180) {  // Handle the 0-360 boundary
-                //Serial.println(s.orientation.x);
+                Serial.println(s.orientation.x);
                 break;
             }
 
             speed = pidl.compute(s.orientation.x);
-            //printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
+            printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
 
             if (speed < 0)
                 _turnLeftMotorCommand(abs(speed));
@@ -93,8 +93,8 @@ void Navigator::turnLeft() {
     }
 
     halt();
-    //Serial.print("Stopped at ");
-    //Serial.println(s.orientation.x);
+    Serial.print("Stopped at ");
+    Serial.println(s.orientation.x);
     currentDirection = nextDirection;
 }
 
@@ -122,7 +122,7 @@ void Navigator::turnRight() {
                 currentAngle = currentAngle - 360;
 
             speed = pidr.compute(currentAngle);
-            //printTargetAngleSpeed(targetAngle, currentAngle, speed);
+            printTargetAngleSpeed(targetAngle, currentAngle, speed);
 
             if (speed > 0)
                 _turnRightMotorCommand(abs(speed));
@@ -137,12 +137,12 @@ void Navigator::turnRight() {
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
 
             if (nextDirection == North && s.orientation.x < 180) {    // Handle the 0-360 boundary
-                //Serial.println(s.orientation.x);
+                Serial.println(s.orientation.x);
                 break;
             }
             
             speed = pidr.compute(s.orientation.x);
-            //printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
+            printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
 
             if (speed > 0)
                 _turnRightMotorCommand(speed);
