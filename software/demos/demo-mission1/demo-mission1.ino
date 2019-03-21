@@ -30,7 +30,7 @@ void setup() {
 
 void loop() {
    if (checkForFlame) {
-        int threshhold = 1000;
+        int threshhold = 980;
         if (leftFlame.readFlame() <= threshhold){
             // flame detected on left!
             nav.halt();
