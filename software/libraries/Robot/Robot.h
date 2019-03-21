@@ -6,7 +6,6 @@
 #include <Coordinate.h>
 #include <TFLidar.h>
 #include <Flame.h>
-#include <Motors.h>
 #include <Fan.h>
 #include <Ultrasonic.h>
 #include <Colour.h>
@@ -40,8 +39,6 @@ class Robot {
   public:
     Robot(
         int lidarCapacity,
-        int leftFlameSensorPin,
-        int rightFlameSensoPin,
         int fanPin,
         int rightSonicTrigPin,
         int rightSonicEchoPin,
