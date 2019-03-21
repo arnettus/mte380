@@ -5,11 +5,11 @@ void printTargetAngleSpeed(float target, float angle, float speed);
 void printTargetDistanceSpeed(uint16_t target, uint16_t distance, float speed);
 
 const PIDSettings PIDTurnLeft = {
-    .kp = 2.055,
-    .ki = 0.0081,
-    .kd = 4.7,
-    .outputMin = 75,
-    .outputMax = 216,
+    .kp = 2.3,
+    .ki = 0.0072,
+    .kd = 5.5,
+    .outputMin = 81,
+    .outputMax = 200,
     .tolerance = 0.5,
     .useKpOnMeasure = true,
 };
@@ -17,9 +17,9 @@ const PIDSettings PIDTurnLeft = {
 const PIDSettings PIDTurnRight = {
     .kp = 2.065,
     .ki = 0.0081,
-    .kd = 4.9,
-    .outputMin = 76,
-    .outputMax = 220,
+    .kd = 5.5,
+    .outputMin = 81,
+    .outputMax = 230,
     .tolerance = 0.5,
     .useKpOnMeasure = true,
 };
@@ -319,7 +319,7 @@ inline void Navigator::_turnLeftMotorCommand(float speed) {
         Serial.println("Speed clipped, did nothing");
         return;
     }
-    motors.TurnLeft(speed - 4, speed - 9, speed, speed - 7);
+    motors.TurnLeft(speed - 2, speed, speed - 2, speed - 3);
     //motors.TurnLeft(speed - 7, speed - 6, speed - 2, speed);
 }
 
@@ -329,7 +329,7 @@ inline void Navigator::_turnRightMotorCommand(float speed) {
         return;
     }
     //motors.TurnRight(speed - 4, speed - 9, speed, speed - 7);
-    motors.TurnRight(speed - 7, speed - 6, speed - 2, speed);
+    motors.TurnRight(speed, speed, speed - 5, speed - 5);
 }
 
 static String Navigator::_getDirectionAsString(Direction d) {
