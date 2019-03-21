@@ -1,5 +1,4 @@
 #include "Robot.h"
-#include <SoftwareSerial.h>
 
 Robot::Robot(
         int lidarCapacity,
@@ -456,13 +455,6 @@ StackArray<Coordinate> Robot::pathPlan(Coordinate e) {
         }
     }
 
-    Serial.println("---- final cost ----");
-    Serial.println(costMap[e.y][e.x].cost);
-    // Serial.println(costMap[5][4].parent.x);
-    // Serial.println(costMap[5][4].parent.y);
-    // Serial.println(costMap[5][4].cost);
-
-
     // post process here, go backwards in costMap
     Coordinate focus{e.x,e.y};
     Direction focusDir = Nothing;
@@ -489,52 +481,29 @@ int Robot::turnCost(Coordinate currParent, Coordinate curr, Coordinate nxt) {
 
     if(currParent.x == curr.x && currParent.y == curr.y) {
         //orientation = navGetCurrentDirection();
-        Serial.println("hdfsdkfdksf");
         o = North;
     } else {
         o = dirFromParent(currParent, curr);
     }
 
-    // Serial.println("this is a turn cost ------");
-
-    // Serial.print("currParent: ");
-    // Serial.print(currParent.x);
-    // Serial.print(",");
-    // Serial.print(currParent.y);
-    // Serial.print(" curr: ");
-    // Serial.print(curr.x);
-    // Serial.print(",");
-    // Serial.print(curr.y);
-    // Serial.print(" nxt: ");
-    // Serial.print(nxt.x);
-    // Serial.print(",");
-    // Serial.print(nxt.y);
-    // Serial.println("");
-
-    // Serial.println(o);
-
     switch (o) {
         case North:
             if(nxt.y < curr.y) {
-                Serial.println("hi north");
                 return 0;
             }
             break;
         case South:
             if(nxt.y > curr.y) {
-                Serial.println("hi south");
                 return 0;
             }
             break;
         case East:
             if(nxt.x > curr.x) {
-                Serial.println("hi east");
                 return 0;
             }
             break;
         case West:
             if(nxt.x < curr.x) {
-                Serial.println("hi west");
                 return 0;
             }
             break;
@@ -562,8 +531,12 @@ int Robot::tileCost(Tile t) {
     switch (t) {
         case SAND:
             return 2;
+            break;
         case GRAVEL:
             return 3;
+            break;
+        default:
+            break;
     }
 
     return 1;
