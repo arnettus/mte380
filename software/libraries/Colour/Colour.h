@@ -2,6 +2,7 @@
 #define COLOUR_H
 
 #include <Arduino.h>
+#include "RollingAverage.h"
 
 class Colour {
 public:
@@ -16,14 +17,17 @@ public:
         PERCENT_20 = 0x10,
         PERCENT_100= 0x11
     };
-    Colour(int S0, int S1, int S2, int S3, int OUT, Frequency frequency = PERCENT_20);
-    void PrintRGB(int delay_time = 100);
-    ColourType GetColour(int r, int g, int b);
+    Colour(int S0, int S1, int S2, int S3, int OUT,  int capacity, Frequency frequency = PERCENT_20);
+    void InitColour();
     ColourType ReadColour(int delay_time = 100);
+
 
 private:
     int _S0, _S1, _S2, _S3, _OUT;
     Frequency _frequency;
+    RollingAverage<int> raR_;
+    RollingAverage<int> raG_;
+    RollingAverage<int> raB_;
 };
 
 #endif // COLOUR_H
