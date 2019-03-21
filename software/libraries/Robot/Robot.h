@@ -126,18 +126,14 @@ class Robot {
     StackArray<Coordinate> goals;
     StackArray<Coordinate> psoi;
 
-    int initialDistFromStopPos;
-    int tilesPrevAdvanced;
-    int distTravelled;
     int targetDistToGoal;
+    int housesVisited;
 
     int cLEDPin;
     int redHouseLed;
     int yellowHouseLed;
 
     bool surveyBEnabled;
-    bool missionCompleted;
-    bool reverse;
 
     // Initialization
     void initializeGrid();
@@ -203,6 +199,8 @@ class Robot {
     int expectedDistanceInFront();
     int expectedDistanceOnRight();
     int expectedDistanceOnLeft();
+
+    void neighbours(StackArray<Coordinate> n, int x, int y);
 
     // Distances
     int numTilesAway(int distance);
