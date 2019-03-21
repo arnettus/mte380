@@ -20,13 +20,12 @@ public:
     bool begin();
     void turnLeft();
     void turnRight();
-    void goForward(uint16_t targetDelta);
-    void goReverse(uint16_t targetDelta);
-    void goForward2(uint16_t targetDistance);
-    void goReverse2(uint16_t targetDistance);
+    void goForward(uint16_t targetDistance);
+    void goReverse(uint16_t targetDistance);
     void halt();
 
     void readMagnetometer();
+    bool detectedMagnet();
 
     void demoManualMode();
     void demoIMULoopOrientation();
@@ -43,7 +42,6 @@ private:
     PID             pidfwd;
     PID             pidrev;
     Motors          motors;
-    TFMiniLidar     tf;
 
     static Direction _getNextDirectionLeft(Direction d);
     static Direction _getNextDirectionRight(Direction d);

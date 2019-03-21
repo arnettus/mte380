@@ -1,7 +1,13 @@
 #include <Navigator.h>
 #include <TFMiniLidar.h>
 
-#define TURN_TIMEOUT_MS 1000
+const float ENC1_TO_DIST = 2000 / 28.3;
+
+const unsigned long TURN_TIMEOUT_MS = 1500;
+
+const float MAGNET_DETECTED_X = 40;
+const float MAGNET_DETECTED_Y = 40;
+const float MAGNET_DETECTED_Z = 40;
 
 void printTargetAngleSpeed(float target, float angle, float speed);
 void printTargetDistanceSpeed(uint16_t target, uint16_t distance, float speed);
@@ -17,7 +23,7 @@ const PIDSettings PIDTurnLeft = {
 };
 
 const PIDSettings PIDTurnRight = {
-    .kp = 1.2,
+    .kp = 1.25,
     .ki = 0.0002,
     .kd = 0,
     .outputMin = 70,
@@ -53,7 +59,6 @@ Navigator::Navigator()
     , pidfwd(PIDGoForward)
     , pidrev(PIDGoReverse)
     , imu(55)
-    , tf(1)
 {
 }
 
@@ -85,7 +90,7 @@ void Navigator::turnLeft() {
 
         while (!pidl.isLessThanSetpoint()) {
             if (millis() - t > TURN_TIMEOUT_MS) {
-                Serial.println("B");
+                Serial.println("Turn timed out");
                 break;
             }
 
@@ -95,8 +100,6 @@ void Navigator::turnLeft() {
                 currentAngle += 360;
 
             speed = pidl.compute(currentAngle);
-            //printTargetAngleSpeed(targetAngle, currentAngle, speed);
-
             if (speed < 0)
                 _turnLeftMotorCommand(abs(speed));
         }
@@ -107,20 +110,17 @@ void Navigator::turnLeft() {
 
         while (!pidl.isLessThanSetpoint()) {
             if (millis() - t > TURN_TIMEOUT_MS) {
-                Serial.println("B");
+                Serial.println("Turn timed out");
                 break;
             }
 
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
 
             if (nextDirection == North && s.orientation.x > 180) {  // Handle the 0-360 boundary
-                //Serial.println(s.orientation.x);
                 break;
             }
 
             speed = pidl.compute(s.orientation.x);
-            //printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
-
             if (speed < 0)
                 _turnLeftMotorCommand(abs(speed));
         }
@@ -128,8 +128,6 @@ void Navigator::turnLeft() {
 
     halt();
     currentDirection = nextDirection;
-    //Serial.print("Stopped at ");
-    //Serial.println(s.orientation.x);
 }
 
 void Navigator::turnRight() {
@@ -151,7 +149,7 @@ void Navigator::turnRight() {
 
         while (!pidr.isGreaterThanSetpoint()) {
             if (millis() - t > TURN_TIMEOUT_MS) {
-                Serial.println("B");
+                Serial.println("Turn timed out");
                 break;
             }
 
@@ -162,8 +160,6 @@ void Navigator::turnRight() {
                 currentAngle = currentAngle - 360;
 
             speed = pidr.compute(currentAngle);
-            //printTargetAngleSpeed(targetAngle, currentAngle, speed);
-
             if (speed > 0)
                 _turnRightMotorCommand(abs(speed));
         }
@@ -174,20 +170,17 @@ void Navigator::turnRight() {
 
         while (!pidr.isGreaterThanSetpoint()) {
             if (millis() - t > TURN_TIMEOUT_MS) {
-                Serial.println("B");
+                Serial.println("Turn timed out");
                 break;
             }
 
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
 
             if (nextDirection == North && s.orientation.x < 180) {    // Handle the 0-360 boundary
-                //Serial.println(s.orientation.x);
                 break;
             }
             
             speed = pidr.compute(s.orientation.x);
-            //printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
-
             if (speed > 0)
                 _turnRightMotorCommand(speed);
         }
@@ -195,13 +188,9 @@ void Navigator::turnRight() {
 
     halt();
     currentDirection = nextDirection;
-    //Serial.print("Stopped at ");
-    //Serial.println(s.orientation.x);
 }
 
-#define ENC1_TO_DIST (2000 / 28.3)
-
-void Navigator::goForward2(uint16_t targetDistance) {
+void Navigator::goForward(uint16_t targetDistance) {
     motors.SetMotor1Enc(0);
     uint16_t currentDistance = 0;
 
@@ -221,7 +210,7 @@ void Navigator::goForward2(uint16_t targetDistance) {
     halt();
 }
 
-void Navigator::goReverse2(uint16_t targetDistance) {
+void Navigator::goReverse(uint16_t targetDistance) {
     motors.SetMotor1Enc(0);
     uint16_t currentDistance = 0;
 
@@ -239,66 +228,6 @@ void Navigator::goReverse2(uint16_t targetDistance) {
     }
 
     halt();
-}
-
-void Navigator::goForward(uint16_t targetDelta) {
-    tf.start();
-    uint16_t start = tf.getDistance();
-    uint16_t delta = 0;
-
-    Serial.print("Started at ");
-    Serial.println(start);
-
-    pidfwd.begin(targetDelta, delta);
-
-    float speed;
-    while (!pidfwd.hasReachedSetpoint()) {
-        delta = start - tf.getDistance();
-        speed = pidfwd.compute(delta);
-
-        printTargetDistanceSpeed(targetDelta, delta, speed);
-
-        if (speed > 0)
-            _goForwardMotorCommand(speed);
-    }
-
-    halt();
-
-    Serial.print("Last delta was ");
-    Serial.print(delta);
-    Serial.print(". Stopped at ");
-    Serial.println(tf.getDistance());
-
-    tf.stop();
-}
-
-void Navigator::goReverse(uint16_t targetDelta) {
-    tf.start();
-    uint16_t start = tf.getDistance();
-    uint16_t delta = 0;
-
-    Serial.print("Started at ");
-    Serial.println(start);
-
-    pidrev.begin(targetDelta, delta);
-
-    float speed;
-    while (!pidrev.hasReachedSetpoint()) {
-        delta = tf.getDistance() - start;
-        speed = pidrev.compute(delta);
-
-        if (speed > 0)
-            _goReverseMotorCommand(speed);
-    }
-
-    halt();
-
-    Serial.print("Last delta was ");
-    Serial.print(delta);
-    Serial.print(". Stopped at ");
-    Serial.println(tf.getDistance());
-
-    tf.stop();
 }
 
 void Navigator::halt() {
@@ -319,6 +248,13 @@ void Navigator::readMagnetometer() {
     Serial.println(msg);
 }
 
+bool Navigator::detectedMagnet() {
+    sensors_event_t s;
+    imu.getEvent(&s, Adafruit_BNO055::VECTOR_MAGNETOMETER);
+
+    return abs(s.magnetic.x) >= MAGNET_DETECTED_X || abs(s.magnetic.y) >= MAGNET_DETECTED_Y || abs(s.magnetic.z) >= MAGNET_DETECTED_Z;
+}
+
 inline void Navigator::_goForwardMotorCommand(float speed) {
     if (speed - 9 < 0) {
         Serial.println("Speed clipped, did nothing");
@@ -336,20 +272,10 @@ inline void Navigator::_goReverseMotorCommand(float speed) {
 }
 
 inline void Navigator::_turnLeftMotorCommand(float speed) {
-    if (speed - 5 < 0) {
-        Serial.println("Speed clipped, did nothing");
-        return;
-    }
     motors.TurnLeft(speed, speed, speed, speed);
-    //motors.TurnLeft(speed - 7, speed - 6, speed - 2, speed);
 }
 
 inline void Navigator::_turnRightMotorCommand(float speed) {
-    if (speed - 3 < 0) {
-        Serial.println("Speed clipped, did nothing");
-        return;
-    }
-    //motors.TurnRight(speed - 4, speed - 9, speed, speed - 7);
     motors.TurnRight(speed, speed, speed, speed);
 }
 
@@ -464,7 +390,7 @@ void Navigator::demoManualMode() {
                     break;
                 case 'a':
                     halt();
-                    Serial.print("Turning left");
+                    Serial.println("Turning left");
                     delay(1000);
                     turnLeft();
                     ks = Q;
@@ -502,18 +428,26 @@ void Navigator::demoManualMode() {
                     break;
                 case 'f':
                     readMagnetometer();
+                    Serial.print("Magnet detected: ");
+                    Serial.println(detectedMagnet());
+                    break;
+                case 'u':
+                    goForward(30);
+                    break;
+                case 'j':
+                    goReverse(30);
                     break;
                 case 'i':
-                    goForward2(30);
+                    goForward(60);
                     break;
                 case 'k':
-                    goReverse2(30);
+                    goReverse(60);
                     break;
                 case 'o':
-                    tf.start();
-                    Serial.println(tf.getDistance());
-                    tf.stop();
+                    goForward(90);
                     break;
+                case 'l':
+                    goReverse(90);
                 default:
                     break;
             }
