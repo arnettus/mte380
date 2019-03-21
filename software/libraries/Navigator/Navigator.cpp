@@ -1,47 +1,49 @@
 #include <Navigator.h>
 #include <TFMiniLidar.h>
 
+#define TURN_TIMEOUT_MS 1000
+
 void printTargetAngleSpeed(float target, float angle, float speed);
 void printTargetDistanceSpeed(uint16_t target, uint16_t distance, float speed);
 
 const PIDSettings PIDTurnLeft = {
-    .kp = 2.3,
-    .ki = 0.0072,
-    .kd = 5.5,
-    .outputMin = 81,
-    .outputMax = 200,
-    .tolerance = 0.5,
-    .useKpOnMeasure = true,
+    .kp = 1,
+    .ki = 0.0001,
+    .kd = 0,
+    .outputMin = 63,
+    .outputMax = 240,
+    .tolerance = 1,
+    .useKpOnMeasure = false,
 };
 
 const PIDSettings PIDTurnRight = {
-    .kp = 2.065,
-    .ki = 0.0081,
-    .kd = 5.5,
-    .outputMin = 81,
-    .outputMax = 230,
-    .tolerance = 0.5,
-    .useKpOnMeasure = true,
+    .kp = 1.2,
+    .ki = 0.0002,
+    .kd = 0,
+    .outputMin = 70,
+    .outputMax = 250,
+    .tolerance = 1,
+    .useKpOnMeasure = false,
 };
 
 const PIDSettings PIDGoForward = {
-    .kp = 5,
-    .ki = 0.23,
-    .kd = 0.8,
+    .kp = 2,
+    .ki = 0.0001,
+    .kd = 0,
     .outputMin = 45,
     .outputMax = 250,
     .tolerance = 0,
-    .useKpOnMeasure = true,
+    .useKpOnMeasure = false,
 };
 
 const PIDSettings PIDGoReverse = {
-    .kp = 5,
-    .ki = 0.23,
-    .kd = 0.8,
+    .kp = 2,
+    .ki = 0.0001,
+    .kd = 0,
     .outputMin = 45,
     .outputMax = 250,
     .tolerance = 0,
-    .useKpOnMeasure = true,
+    .useKpOnMeasure = false,
 };
 
 Navigator::Navigator()
@@ -79,15 +81,21 @@ void Navigator::turnLeft() {
         
         pidl.begin(targetAngle, currentAngle);
         float speed = 0;
+        unsigned long t = millis();
 
         while (!pidl.isLessThanSetpoint()) {
+            if (millis() - t > TURN_TIMEOUT_MS) {
+                Serial.println("B");
+                break;
+            }
+
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
             currentAngle = s.orientation.x;
             if (currentAngle < 180)
                 currentAngle += 360;
 
             speed = pidl.compute(currentAngle);
-            printTargetAngleSpeed(targetAngle, currentAngle, speed);
+            //printTargetAngleSpeed(targetAngle, currentAngle, speed);
 
             if (speed < 0)
                 _turnLeftMotorCommand(abs(speed));
@@ -95,8 +103,14 @@ void Navigator::turnLeft() {
     } else {
         pidl.begin(targetAngle, s.orientation.x);
         float speed = 0;
+        unsigned long t = millis();
 
         while (!pidl.isLessThanSetpoint()) {
+            if (millis() - t > TURN_TIMEOUT_MS) {
+                Serial.println("B");
+                break;
+            }
+
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
 
             if (nextDirection == North && s.orientation.x > 180) {  // Handle the 0-360 boundary
@@ -105,7 +119,7 @@ void Navigator::turnLeft() {
             }
 
             speed = pidl.compute(s.orientation.x);
-            printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
+            //printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
 
             if (speed < 0)
                 _turnLeftMotorCommand(abs(speed));
@@ -133,8 +147,14 @@ void Navigator::turnRight() {
 
         pidr.begin(targetAngle, currentAngle);
         float speed = 0;
+        unsigned long t = millis();
 
         while (!pidr.isGreaterThanSetpoint()) {
+            if (millis() - t > TURN_TIMEOUT_MS) {
+                Serial.println("B");
+                break;
+            }
+
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
             currentAngle = s.orientation.x;
 
@@ -142,7 +162,7 @@ void Navigator::turnRight() {
                 currentAngle = currentAngle - 360;
 
             speed = pidr.compute(currentAngle);
-            printTargetAngleSpeed(targetAngle, currentAngle, speed);
+            //printTargetAngleSpeed(targetAngle, currentAngle, speed);
 
             if (speed > 0)
                 _turnRightMotorCommand(abs(speed));
@@ -150,8 +170,14 @@ void Navigator::turnRight() {
     } else {
         pidr.begin(targetAngle, s.orientation.x);
         float speed = 0;
+        unsigned long t = millis();
 
         while (!pidr.isGreaterThanSetpoint()) {
+            if (millis() - t > TURN_TIMEOUT_MS) {
+                Serial.println("B");
+                break;
+            }
+
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
 
             if (nextDirection == North && s.orientation.x < 180) {    // Handle the 0-360 boundary
@@ -160,7 +186,7 @@ void Navigator::turnRight() {
             }
             
             speed = pidr.compute(s.orientation.x);
-            printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
+            //printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
 
             if (speed > 0)
                 _turnRightMotorCommand(speed);
@@ -314,7 +340,7 @@ inline void Navigator::_turnLeftMotorCommand(float speed) {
         Serial.println("Speed clipped, did nothing");
         return;
     }
-    motors.TurnLeft(speed - 2, speed, speed - 2, speed - 3);
+    motors.TurnLeft(speed, speed, speed, speed);
     //motors.TurnLeft(speed - 7, speed - 6, speed - 2, speed);
 }
 
@@ -324,7 +350,7 @@ inline void Navigator::_turnRightMotorCommand(float speed) {
         return;
     }
     //motors.TurnRight(speed - 4, speed - 9, speed, speed - 7);
-    motors.TurnRight(speed, speed, speed - 5, speed - 5);
+    motors.TurnRight(speed, speed, speed, speed);
 }
 
 static String Navigator::_getDirectionAsString(Direction d) {
