@@ -2,11 +2,12 @@
 #include <SoftwareSerial.h>
 #include <Motors.h>
 #include <Fan.h>
+#include <Flame.h>
 
 // constructors
 Flame leftFlame(A0);
 Flame rightFlame(A1);
-Motors myMotors;
+Navigator nav;
 Fan myFan;
 
 // flags
@@ -15,6 +16,7 @@ bool rightFlameDetected = false;
 volatile bool checkForFlame = false;
 
 void setup() {
+    myFan.Setup();
     Serial.begin(9600);
 
     // !!! pretty sure we don't need interrupts for this
@@ -41,11 +43,11 @@ void loop() {
         int threshhold = 1000;
         if (leftFlame.readFlame() <= threshhold){
             // flame detected on left!
-            myMotors.Halt();
-            delay(500);
-            myMotors.OLTurnLeft90();
-            myFan.TurnOn();
-            delay(1000);
+            nav.halt();
+            delay(1500);
+            nav.turnLeft();
+            myFan.TurnOn(Fan::MED_SPEED);
+            delay(3000);
             myFan.TurnOff();
             myFan.Shutdown();
             myMotors.OLTurnRight90();
@@ -53,11 +55,11 @@ void loop() {
         }
         else if(rightFlame.readFlame() <= threshhold){
             // flame detected on right!
-            myMotors.Halt();
-            delay(500);
-            myMotors.OLTurnRight90();
-            myFan.TurnOn();
-            delay(1000);
+            nav.halt();
+            delay(1500);
+            nav.turnRight();
+            myFan.TurnOn(Fan::MED_SPEED);
+            delay(3000);
             myFan.TurnOff();
             myFan.Shutdown();
             myMotors.OLTurnLeft90();
