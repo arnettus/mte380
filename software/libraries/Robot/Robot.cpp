@@ -34,12 +34,9 @@ Robot::Robot(
     goals.push(pos);
 
     // flags
-    missionCompleted = false;
 
     // do this every time you do a suveyModeShift, record and pathplan again if so
     checkedForObjectInFront = false;
-
-    reverse = false;
 }
 
 void Robot::initializeSensors() {
@@ -54,20 +51,29 @@ void Robot::go() {
         switch (st) {
             case PATH_PLAN_SURVEY_A:
                 pathPlanSurveyAState();
+                break;
             case PATH_PLAN_SURVEY_B:
                 pathPlanSurveyBState();
+                break;
             case PATH_PLAN:
                 pathPlanState();
+                break;
             case HOUSE:
                 houseState();
+                break;
             case STRAIGHT:
                 straightState();
+                break;
             case TURN_LEFT:
                 turnLeftState();
+                break;
             case TURN_RIGHT:
                 turnRightState();
+                break;
         }
     }
+
+
 }
 
 void Robot::initializeLidar() {}
@@ -130,10 +136,10 @@ void Robot::pathPlanState() {
         removeGoal();
         removePOI();
 
-        st = HOUSE;
+        if(housesVisited == 2) st = DONE;
+        else st = HOUSE;
     } else {
         removeGoal();
-
         if(!changedStateToTurnTowardsNextGoal()) {
             setTargetDistToGoal();
             st = STRAIGHT;
@@ -144,32 +150,25 @@ void Robot::pathPlanState() {
 }
 
 void Robot::houseState() {
-    if(prevSt == PATH_PLAN){
-        targetDistToGoal = HOUSE_PROXIMITY;
-        st = STRAIGHT;
-    } else if(prevSt == STRAIGHT && !missionCompleted) {
-        haltNav();
+    haltNav();
 
-        Colour::ColourType c = identifyHouse();
-        c == Colour::RED ? inidicateRedHouse() : indiciateYellowHouse();
+    // go forward
+    // targetDistToGoal = gravity.reading - HOUSE_PROXIMITY <---- main
+    targetDistToGoal = HOUSE_PROXIMITY;
+    navGoForward();
 
-        missionCompleted = true;
-        reverse = true;
-        targetDistToGoal = HOUSE_PROXIMITY;
-        st = STRAIGHT;
-    } else {
-        reverse = false;
-        missionCompleted = false;
-        computeNextPOIGoal();
-        st = PATH_PLAN;
-    }
+    identifyHouse() == Colour::RED ? inidicateRedHouse() : indiciateYellowHouse();
 
+    targetDistToGoal = HOUSE_PROXIMITY; // targetDistToGoal = gravity.reading - HOUSE_PROXIMITY <---- main
+    navGoReverse();
+
+    computeNextPOIGoal();
+    st = PATH_PLAN;
     prevSt = HOUSE;
 }
 
 void Robot::straightState() {
-    if(reverse) navGoReverse();
-    else navGoForward();
+    navGoForward();
 
     st = prevSt;
     prevSt = STRAIGHT;
@@ -393,7 +392,51 @@ Coordinate Robot::findValidSurveyGoal(Coordinate oneAbove) {
 }
 
 void Robot::computeNextPOIGoal() {
-    goals = pathPlan(psoi.peek());
+    if(housesVisited == 2){ // go home
+        goals = pathPlan(Coordinate{START_X, START_Y});
+    }
+
+    // find best adjacent tile to a house
+    int bestScore = 13;
+    Coordinate bestCoordinate = psoi.peek();
+
+    StackArray<Coordinate> n;
+    neighbours(n, bestCoordinate.x, bestCoordinate.y);
+
+    while(!n.isEmpty()){
+        Coordinate nxt = n.pop();
+        int score = heuristic(nxt, psoi.peek());
+
+        if(score < bestScore) {
+            bestCoordinate = nxt;
+            bestScore = score;
+        }
+    }
+
+    goals = pathPlan(bestCoordinate);
+}
+
+int heuristic(Coordinate a, Coordinate b) {
+    return abs(a.x - b.x) + abs(b.y - b.y);
+}
+
+void Robot::neighbours(StackArray<Coordinate> n, int currX, int currY) {
+    if(currY > 0) { // above
+        if(!(grid[currY-1][currX]) == WATER)
+            n.push(Coordinate{currX, currY-1});
+    }
+    if(currY < MAP_HEIGHT-1) { // below
+        if(!(grid[currY+1][currX]) == WATER)
+            n.push(Coordinate{currX, currY+1});
+    }
+    if(currX > 0) { // left
+        if(!(grid[currY][currX-1]) == WATER)
+            n.push(Coordinate{currX-1, currY});
+    }
+    if(currX < MAP_WIDTH-1) { // right
+        if(!(grid[currY][currX+1]) == WATER)
+            n.push(Coordinate{currX+1, currY});
+    }
 }
 
 StackArray<Coordinate> Robot::pathPlan(Coordinate e) {
@@ -409,9 +452,6 @@ StackArray<Coordinate> Robot::pathPlan(Coordinate e) {
     while(!frontier.isEmpty()) {
         Coordinate current = frontier.pop();
 
-        // get valid neighbours
-        StackArray<Coordinate> neighbours;
-
         int currX = current.x;
         int currY = current.y;
 
@@ -419,26 +459,12 @@ StackArray<Coordinate> Robot::pathPlan(Coordinate e) {
             break;
         }
 
-        if(currY > 0) { // above
-            if(!(grid[currY-1][currX]) == WATER)
-                neighbours.push(Coordinate{currX, currY-1});
-        }
-        if(currY < MAP_HEIGHT-1) { // below
-            if(!(grid[currY+1][currX]) == WATER)
-                neighbours.push(Coordinate{currX, currY+1});
-        }
-        if(currX > 0) { // left
-            if(!(grid[currY][currX-1]) == WATER)
-                neighbours.push(Coordinate{currX-1, currY});
-        }
-        if(currX < MAP_WIDTH-1) { // right
-            if(!(grid[currY][currX+1]) == WATER)
-                neighbours.push(Coordinate{currX+1, currY});
-        }
+        StackArray<Coordinate> n;
+        neighbours(n, currX, currY);
 
         // iterate over each neighbour
-        while(!neighbours.isEmpty()) {
-            Coordinate nxt = neighbours.pop();
+        while(!n.isEmpty()) {
+            Coordinate nxt = n.pop();
 
             int newCost = 1 +
                 costMap[currY][currX].cost +
