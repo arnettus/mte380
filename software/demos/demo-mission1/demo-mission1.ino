@@ -1,11 +1,10 @@
-#include <Flame.h>
 #include <SoftwareSerial.h>
 #include <Navigator.h>
 #include <Fan.h>
+#include <IR.h>
 
 // constructors
-Flame leftFlame(A0);
-Flame rightFlame(A1);
+Firewall firewall;
 Navigator nav;
 Fan myFan;
 
@@ -25,44 +24,33 @@ void setup() {
     Serial.println("Starting in 3 seconds...");
     delay(3000);
     Serial.println("Starting!");
-//    nav.goForward();
+    nav.goForward();
 }
 
 void loop() {
    if (checkForFlame) {
-    while (true) {
-        Serial.println("");
-        Serial.print("Left:");
-        Serial.print(leftFlame.readFlame());
-        Serial.print("Right:");
-        Serial.print(rightFlame.readFlame());
-        Serial.println("");
-        delay(500);
-    }
-        
-        
         int threshhold = 1000;
-        if (leftFlame.isFlameInSight()){
+        if (firewall.ReadValue(0) <= threshhold AND firewall.ReadValue(2) <= threshhold){
             // flame detected on left!
-            Serial.print("Flame detected at: ");
-            Serial.print(leftFlame.isFlameInSight());
+            Serial.print("Left flame detected at: ");
+            Serial.println(firewall.ReadValue(0), firewall.ReadValue(2));
             nav.halt();
             delay(1500);
             nav.turnLeft();
-            myFan.TurnOn(Fan::LOW_SPEED);
+            myFan.TurnOn(Fan::HIGH_SPEED);
             delay(3000);
             myFan.TurnOff();
             myFan.Shutdown();
             nav.turnRight();
         }
-        else if(rightFlame.isFlameInSight()){
+        else if(firewall.ReadValue(1) <= threshhold AND firewall.ReadValue(3) <= threshhold){
             // flame detected on right!
-            Serial.print("Flame detected at: ");
-            Serial.print(rightFlame.isFlameInSight());
+            Serial.print("Right flame detected at: ");
+            Serial.println(firewall.ReadValue(1), firewall.ReadValue(3));
             nav.halt();
             delay(1500);
             nav.turnRight();
-            myFan.TurnOn();
+            myFan.TurnOn(FAN::HIGH_SPEED);
             delay(3000);
             myFan.TurnOff();
             myFan.Shutdown();
