@@ -25,23 +25,23 @@ const PIDSettings PIDTurnRight = {
 };
 
 const PIDSettings PIDGoForward = {
-    .kp = 2.2,
-    .ki = 0.000001,
-    .kd = 15,
-    .outputMin = 20,
-    .outputMax = 180,
+    .kp = 5,
+    .ki = 0.23,
+    .kd = 0.8,
+    .outputMin = 45,
+    .outputMax = 250,
     .tolerance = 0,
-    .useKpOnMeasure = false,
+    .useKpOnMeasure = true,
 };
 
 const PIDSettings PIDGoReverse = {
-    .kp = 2,
-    .ki = 0.00001,
-    .kd = 10,
-    .outputMin = 40,
-    .outputMax = 180,
+    .kp = 5,
+    .ki = 0.23,
+    .kd = 0.8,
+    .outputMin = 45,
+    .outputMax = 250,
     .tolerance = 0,
-    .useKpOnMeasure = false,
+    .useKpOnMeasure = true,
 };
 
 Navigator::Navigator()
@@ -58,10 +58,6 @@ Navigator::Navigator()
 bool Navigator::begin() {
     if (!imu.begin()) {
         Serial.println("Could not find the BNO055");
-        return false;
-    }
-    if (!tf.init(&Serial3)) {
-        Serial.println("Could not init TF Mini");
         return false;
     }
     return true;
@@ -91,7 +87,7 @@ void Navigator::turnLeft() {
                 currentAngle += 360;
 
             speed = pidl.compute(currentAngle);
-            //printTargetAngleSpeed(targetAngle, currentAngle, speed);
+            printTargetAngleSpeed(targetAngle, currentAngle, speed);
 
             if (speed < 0)
                 _turnLeftMotorCommand(abs(speed));
@@ -109,7 +105,7 @@ void Navigator::turnLeft() {
             }
 
             speed = pidl.compute(s.orientation.x);
-            //printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
+            printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
 
             if (speed < 0)
                 _turnLeftMotorCommand(abs(speed));
@@ -146,7 +142,7 @@ void Navigator::turnRight() {
                 currentAngle = currentAngle - 360;
 
             speed = pidr.compute(currentAngle);
-            //printTargetAngleSpeed(targetAngle, currentAngle, speed);
+            printTargetAngleSpeed(targetAngle, currentAngle, speed);
 
             if (speed > 0)
                 _turnRightMotorCommand(abs(speed));
@@ -164,7 +160,7 @@ void Navigator::turnRight() {
             }
             
             speed = pidr.compute(s.orientation.x);
-            //printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
+            printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
 
             if (speed > 0)
                 _turnRightMotorCommand(speed);
@@ -177,8 +173,7 @@ void Navigator::turnRight() {
     //Serial.println(s.orientation.x);
 }
 
-#define ENC1_TO_DIST 0
-#define ENC2_TO_DIST 0
+#define ENC1_TO_DIST (2000 / 28.3)
 
 void Navigator::goForward2(uint16_t targetDistance) {
     motors.SetMotor1Enc(0);
@@ -187,8 +182,8 @@ void Navigator::goForward2(uint16_t targetDistance) {
     pidfwd.begin(targetDistance, currentDistance);
 
     float speed;
-    while (!pidfwd.hasReachedSetpoint()) {
-        currentDistance = motors.GetMotor1Enc() * ENC1_TO_DIST;
+    while (!pidfwd.isGreaterThanSetpoint()) {
+        currentDistance = motors.GetMotor1Enc() / ENC1_TO_DIST;
         speed = pidfwd.compute(currentDistance);
 
         printTargetDistanceSpeed(targetDistance, currentDistance, speed);
@@ -208,7 +203,7 @@ void Navigator::goReverse2(uint16_t targetDistance) {
 
     float speed;
     while (!pidrev.hasReachedSetpoint()) {
-        currentDistance = abs(motors.GetMotor1Enc() * ENC1_TO_DIST);
+        currentDistance = abs(motors.GetMotor1Enc() / ENC1_TO_DIST);
         speed = pidrev.compute(currentDistance);
 
         printTargetDistanceSpeed(targetDistance, currentDistance, speed);
@@ -425,8 +420,10 @@ void Navigator::demoManualMode() {
     char key;
 
     Serial.println("Entered manual mode.");
+    //motors.SetMotor1Enc(0);
 
     while (1) {
+        //Serial.println(motors.GetMotor1Enc());
         if (Serial.available() > 0) {
             key = Serial.read();
             switch (key) {
@@ -481,10 +478,10 @@ void Navigator::demoManualMode() {
                     readMagnetometer();
                     break;
                 case 'i':
-                    goForward(30);
+                    goForward2(30);
                     break;
                 case 'k':
-                    goReverse(30);
+                    goReverse2(30);
                     break;
                 case 'o':
                     tf.start();
