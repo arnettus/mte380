@@ -1,11 +1,6 @@
 #include <Robot.h>
 #include <SoftwareSerial.h>
 
-int lidarCapacity = 8;
-int leftFlamePin = A0;
-int rightFlamePin = A1;
-int fanPin = A2;
-
 Robot r(
     1,
     1,
@@ -29,9 +24,25 @@ void setup() {
     Serial.begin(9600);
 }
 
+void printCoordinates(StackArray<Coordinate> goals) {
+    while(!goals.isEmpty()) {
+        Coordinate g = goals.pop();
+
+        Serial.println("");
+        Serial.print("[");
+        Serial.print(g.x);
+        Serial.print(",");
+        Serial.print(g.y);
+        Serial.print("]");
+        Serial.println("");
+    }
+
+}
+
 void loop() {
-    r.go();
-    Serial.println();
-    delay(500);
-    return 0;
+    Coordinate e{5,0};
+    StackArray<Coordinate> goals = r.pathPlan(e);
+    printCoordinates(goals);
+    Serial.println("dsfsdf");
+    while(true){}
 }
