@@ -13,6 +13,7 @@ bool checkForFlame = true;
 
 void setup() {
     myFan.Setup();
+    nav.begin();
     Serial.begin(9600);
         if (!nav.begin()) {
         Serial.println("Navigator failed to begin");
@@ -29,7 +30,7 @@ void setup() {
 
 void loop() {
    if (checkForFlame) {
-        int threshhold = 1000;
+        int threshhold = 850;
         if (firewall.ReadValue(0) <= threshhold AND firewall.ReadValue(2) <= threshhold){
             // flame detected on left!
             Serial.print("Left flame detected at: ");
@@ -37,7 +38,7 @@ void loop() {
             nav.halt();
             delay(1500);
             nav.turnLeft();
-            myFan.TurnOn(Fan::HIGH_SPEED);
+            myFan.TurnOn(Fan::MED_SPEED);
             delay(3000);
             myFan.TurnOff();
             myFan.Shutdown();
@@ -50,7 +51,7 @@ void loop() {
             nav.halt();
             delay(1500);
             nav.turnRight();
-            myFan.TurnOn(FAN::HIGH_SPEED);
+            myFan.TurnOn(Fan::MED_SPEED);
             delay(3000);
             myFan.TurnOff();
             myFan.Shutdown();
