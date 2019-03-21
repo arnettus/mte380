@@ -43,6 +43,5 @@ void loop() {
     Coordinate e{5,0};
     StackArray<Coordinate> goals = r.pathPlan(e);
     printCoordinates(goals);
-    Serial.println("dsfsdf");
     while(true){}
 }
