@@ -1,59 +1,52 @@
 #include "Robot.h"
 
 Robot::Robot(
-        lidarCapacity,
-        leftFlamePin,
-        rightFlamePin,
-        fanPin,
-        rightSonicTrigPin,
-        rightSonicEchoPin,
-        leftSonicTrigPin,
-        leftSonicEchoPin,
-        cS0,
-        cS1,
-        cS2,
-        cS3,
-        cOUT,
-        cLEDPin,
-        redHouseLed,
-        yellowHouseLed
+        int lidarCapacity,
+        int leftFlamePin,
+        int rightFlamePin,
+        int fanPin,
+        int rightSonicTrigPin,
+        int rightSonicEchoPin,
+        int leftSonicTrigPin,
+        int leftSonicEchoPin,
+        int cS0,
+        int cS1,
+        int cS2,
+        int cS3,
+        int cOUT,
+        int cLEDPin,
+        int redHouseLed,
+        int yellowHouseLed
     ) :
     st(PATH_PLAN_SURVEY_A),
     prevSt(STRAIGHT),
-    goals(GOAL_CAP),
-    psoi(POI_CAP),
-    pos(START_X, START_Y),
+    pos{START_X, START_Y},
     lidar(lidarCapacity),
-    leftFlame(leftFlamePin),
-    rightFlame(rightFlamePin),
-    fan(fanPin),
+    flameLeft(leftFlamePin),
+    flameRight(rightFlamePin),
     rightSonic(rightSonicTrigPin, rightSonicEchoPin),
     leftSonic(leftSonicTrigPin, leftSonicEchoPin),
     colourSensor(cS0, cS1, cS2, cS3, cOUT),
     cLEDPin(cLEDPin),
     redHouseLed(redHouseLed),
     yellowHouseLed(yellowHouseLed)
-
 {
-    initializeGrid();
-
     goals.push(pos);
-    targetAngle = STANDARD_TARGET_ANGLE;
 
     // flags
     missionCompleted = false;
+
+    // do this every time you do a suveyModeShift, record and pathplan again if so
     checkedForObjectInFront = false;
-    waterDetected = false;
+
     reverse = false;
-    shiftedLeftDuringSurvey = false;
 }
 
 void Robot::initializeSensors() {
     initializeFireFighter();
     initializeLidar();
-    initializeGravity();
     initializeColour();
-    initializeNav();
+    initializeNavigator();
 }
 
 void Robot::go() {
@@ -77,38 +70,26 @@ void Robot::go() {
     }
 }
 
-void Robot::initializeFireFighter() {
-    fan.Setup();
-}
+void Robot::initializeLidar() {}
 
-void Robot::shutDownFireFighter() {
-    fan.Shutdown();
-}
+void Robot::initializeFireFighter() {}
 
-void Robot::initializeFan() {
-    fan.Setup();
-}
-
-void Robot::initializeGravity() {
-    gravities.Init();
-}
-
-void Robot::initializeNav() {
-    if (!nav.begin()) {
-        Serial.println("Navigator failed to begin");
-        while (1) {
-            delay(1000);
-        }
-    }
-}
+void Robot::shutDownFireFighter() {}
 
 void Robot::initializeColour() {
-    pinMode(cLedPin, OUTPUT);
-    digitalWrite(cLedPin, HIGH); // maybe you can just turn this on right before you read?
+    pinMode(cLEDPin, OUTPUT);
+    digitalWrite(cLEDPin, HIGH); // maybe you can just turn this on right before you read?
 }
 
+void Robot::initializeNavigator() {}
+
+void Robot::haltNav() {}
+
+Direction Robot::navGetCurrentDirection() {}
+
 void Robot::pathPlanSurveyAState() {
-    nav.halt();
+    haltNav();
+    updateCurrentPosition(); // be cautious where you put this
 
     if(goals.isEmpty()) {
         if(isOnRow(LAST_ROW)) {
@@ -124,11 +105,15 @@ void Robot::pathPlanSurveyAState() {
     } else if(prevSt == STRAIGHT && isAtLastGoal()) {
         emptyGoals();
         locatePOI();
-        detectTiles();
-
-        if(isFireAlive) checkAndKillFire();
     } else {
         if(isAtGoal()) removeGoal();
+
+        if(prevSt == TURN_LEFT || prevSt == TURN_RIGHT){
+            locatePOI();
+            emptyGoals();
+            computeNextSurveyAGoal(); // your map might have something new now.
+        }
+
         if(!changedStateToTurnTowardsNextGoal()) {
             setTargetDistToGoal();
             st = STRAIGHT;
@@ -139,14 +124,15 @@ void Robot::pathPlanSurveyAState() {
 }
 
 void Robot::pathPlanState() {
-    nav.halt();
+    haltNav();
 
     if(prevSt == STRAIGHT && isAtLastGoal()) {
-        st = HOUSE;
+        removeGoal();
         removePOI();
+
+        st = HOUSE;
     } else {
-        if(isAtGoal()) removeGoal();
-        // maybe do it here, re-compute goals???
+        removeGoal();
 
         if(!changedStateToTurnTowardsNextGoal()) {
             setTargetDistToGoal();
@@ -162,16 +148,17 @@ void Robot::houseState() {
         targetDistToGoal = HOUSE_PROXIMITY;
         st = STRAIGHT;
     } else if(prevSt == STRAIGHT && !missionCompleted) {
-        nav.halt();
+        haltNav();
 
-        House h = identifyHouse(); // maybe an average reading here???
-        h == RED ? inidicateRedHouse() : indiciateYellowHouse();
+        Colour::ColourType c = identifyHouse();
+        c == Colour::RED ? inidicateRedHouse() : indiciateYellowHouse();
 
         missionCompleted = true;
         reverse = true;
         targetDistToGoal = HOUSE_PROXIMITY;
         st = STRAIGHT;
     } else {
+        reverse = false;
         missionCompleted = false;
         computeNextPOIGoal();
         st = PATH_PLAN;
@@ -181,59 +168,30 @@ void Robot::houseState() {
 }
 
 void Robot::straightState() {
-    if(prevSt != STRAIGHT) {
-        bufSt = prevSt;
+    if(reverse) navGoReverse();
+    else navGoForward();
 
-        distTravelled = 0;
-        setInitialDistFromStopPos();
-        tilesPrevAdvanced = 0;
-
-        if(reverse): nav.goReverse();
-        else: nav.goForward();
-    } else {
-        reverse = false; // default is go straight.
-
-        updateCurrentPosition(); // updates waterDetected
-
-        // Consider, every time you stop, to empty your goals and re-compute path
-        if(distTravelled >= targetDistToGoal || waterDetected) { // could use isAtGoal check instead?
-            waterDetected = false; // in case water is detected but you're already at your goal anyway
-            st = bufSt;
-        } else if(waterDetected) { // only updates after position is updated
-            waterDetected = false;
-            emptyGoals();
-            computeNextPOIGoal();
-            st = bufSt;
-        }
-    }
-
+    st = prevSt;
     prevSt = STRAIGHT;
+    updateCurrentPosition();
 }
 
 void Robot::turnLeftState() {
-    nav.turnLeft();
+    navTurnLeft();
 
     st = prevSt;
     prevSt = TURN_LEFT;
 }
 
 void Robot::turnRightState() {
-    nav.turnRight();
+    navTurnRight();
 
     st = prevSt;
     prevSt = TURN_RIGHT;
 }
 
-void Robot::initializeGrid() {
-    for (int i = 0; i < MAP_HEIGHT; ++i) {
-        for (int j = 0; j < MAP_WIDTH; ++j) {
-            grid[i][j] = UNKNOWN;
-        }
-    }
-}
-
 void Robot::emptyGoals() {
-    goals.empty();
+    goals.isEmpty();
 }
 
 void Robot::removeGoal() {
@@ -245,12 +203,12 @@ void Robot::removePOI() {
 }
 
 bool Robot::isAtGoal() {
-    Coordinate goal = goals.peek();
-    return goal == pos;
+    Coordinate goal = Coordinate{goals.peek()};
+    return goal.x == pos.x && goal.y == pos.y;
 }
 
 bool Robot::isAtLastGoal() {
-    return isAtGoal() && goals.getSize() == 1;
+    return isAtGoal() && goals.count() == 1;
 }
 
 bool Robot::isOnRow(int y) {
@@ -258,34 +216,34 @@ bool Robot::isOnRow(int y) {
 }
 
 bool Robot::changedStateToTurnTowardsNextGoal() {
-    Coordinate nextGoal = goals.peek();
+    Coordinate nextGoal{goals.peek()};
     bool turned = false;
-    Direction ori = nav.getCurrentDirection();
+    Direction ori = navGetCurrentDirection();
 
-    if(nextGoal.x > pos.x) { // go east
+    if(nextGoal.x > pos.x) {
         if(ori != East) {
-            if(st == NORTH) st = TURN_RIGHT;
+            if(ori == North) st = TURN_RIGHT;
             else st = TURN_LEFT;
 
             turned = true;
         }
-    } else if(nextGoal.x < pos.x) { // go west
+    } else if(nextGoal.x < pos.x) {
         if(ori != West) {
-            if(st == South) st = TURN_RIGHT;
+            if(ori == South) st = TURN_RIGHT;
             else st = TURN_LEFT;
 
             turned = true;
         }
-    } else if(nextGoal.y > pos.y) { // go north
+    } else if(nextGoal.y > pos.y) {
         if(ori != North) {
-            if(st == WEST) st = TURN_RIGHT;
+            if(ori == West) st = TURN_RIGHT;
             else st = TURN_LEFT;
 
             turned = true;
         }
-    } else { // go south
+    } else {
         if(ori != South) {
-            if(st == EAST) st = TURN_RIGHT;
+            if(ori == East) st = TURN_RIGHT;
             else st = TURN_LEFT;
 
             turned = true;
@@ -296,27 +254,8 @@ bool Robot::changedStateToTurnTowardsNextGoal() {
 }
 
 void Robot::updateCurrentPosition() {
-    distTravelled = abs(initialDistFromStopPos - distanceInFront());
-
-    int numTilesAdvanced = distTravelled/30 - tilesPrevAdvanced;
-    Direction ori = nav.getCurrentDirection();
-
-    if(numTilesAdvanced > 0) {
-        switch (ori) {
-            case North:
-                pos.y -= numTilesAdvanced;
-            case South:
-                pos.y += numTilesAdvanced;
-            case West:
-                pos.x -= numTilesAdvanced;
-            case East:
-                pos.x += numTilesAdvanced;
-        }
-
-        detectTiles();
-    }
-
-    tilesPrevAdvanced = numTilesAdvanced;
+    pos.x = goals.peek().x;
+    pos.y = goals.peek().y;
 }
 
 void Robot::locatePOI() {
@@ -324,27 +263,27 @@ void Robot::locatePOI() {
         checkedForObjectInFront = true;
         int distFront = distanceInFront();
 
-        if(distFront < expectedDistanceInFront()) {
+        if(distFront + FRONT_TOL < expectedDistanceInFront()) {
             int yTilesAway = numTilesAway(distFront);
             grid[pos.y-yTilesAway][pos.x] = MISSION;
         }
     }
 
-    leftSonicReading = leftSonic.ReadAverageDistance();
-    rightSonicReading = rightSonic.ReadAverageDistance();
+    long leftSonicReading = leftSonic.ReadAverageDistance(100);
+    long rightSonicReading = rightSonic.ReadAverageDistance(100);
 
-    if(leftSonicReading < expectedDistanceOnLeft()) {
+    if(leftSonicReading + SONIC_TOL < expectedDistanceOnLeft()) {
         int poiX = pos.x - numTilesAway(leftSonicReading);
         int poiY = pos.y;
 
-        Coordinate c = Coordinate(poiX, poiY);
+        Coordinate c = Coordinate{poiX, poiY};
         grid[poiY][poiX] = MISSION;
-        psoi.add(c);
+        psoi.push(c);
 
-        if(leftFlame.isFlameInSight()) {
-            turnLeft();
+        if(flameLeft.isFlameInSight()) {
+            navTurnLeft();
             putOutFire();
-            turnRight();
+            navTurnRight();
 
             // The poi was a candle.
             grid[poiY][poiX] = CANDLE;
@@ -352,18 +291,18 @@ void Robot::locatePOI() {
         }
     }
 
-    if(rightSonicReading < expectedDistanceOnRight()) {
-        int poiX = pos.x + numTilesAway(leftSonicReading);
+    if(rightSonicReading + SONIC_TOL < expectedDistanceOnRight()) {
+        int poiX = pos.x + numTilesAway(rightSonicReading);
         int poiY = pos.y;
 
-        Coordinate c = Coordinate(poiX, poiY);
+        Coordinate c{poiX, poiY};
         grid[poiY][poiX] = MISSION;
-        psoi.add(c);
+        psoi.push(c);
 
-        if(rightFlame.isFlameInSight()) {
-            turnRight();
+        if(flameRight.isFlameInSight()) {
+            navTurnRight();
             putOutFire();
-            turnLeft();
+            navTurnLeft();
 
             // The poi was a candle.
             grid[poiY][poiX] = CANDLE;
@@ -374,9 +313,6 @@ void Robot::locatePOI() {
 
 int Robot::distanceInFront() {
     int dist = lidar.getDistance();
-
-    if(dist <= 30) return gravities.GetDistance(VERTICAL);
-    return dist;
 }
 
 int Robot::expectedDistanceInFront() {
@@ -391,56 +327,21 @@ int Robot::expectedDistanceOnLeft() {
     return (pos.x)*TILE_WIDTH;
 }
 
-int Robot::numTilesAway(dist) {
-    return dist/2 + 1;
+int Robot::numTilesAway(int distance) {
+    return distance/30 + 1;
 }
 
 void Robot::putOutFire() {
-    fan.TurnOn();
+    // fan.TurnOn();
     delay(FIRE_FIGHTING_TIME);
 
-    fan.TurnOff();
-    fan.Shutdown()
+    // fan.TurnOff();
+    // fan.Shutdown();
 
     isFireAlive = false;
 }
 
-void Robot::detectTiles() {
-    Direction ori = nav.getCurrentDirection();
-
-    switch (ori) {
-        case North:
-            if(pos.x != 0): grid[pos.y][pos.x-1] = gravities.GetTerrainType(LEFT);
-            if(pos.x != 5): grid[pos.y][pos.x+1] = gravities.GetTerrainType(RIGHT);
-            if(pos.y != 0) {
-                grid[pos.y-1][pos.x] = gravities.GetTerrainType(VERTICAL);
-                if(grid[pos.y-1][pos.x] == WATER): waterDetected = true;
-            }
-        case South:
-            if(pos.x != 0): grid[pos.y][pos.x-1] = gravities.GetTerrainType(RIGHT);
-            if(pos.x != 5): grid[pos.y][pos.x+1] = gravities.GetTerrainType(LEFT);
-            if(pos.y != 5) {
-                grid[pos.y+1][pos.x] = gravities.GetTerrainType(VERTICAL);
-                if(grid[pos.y+1][pos.x] == WATER): waterDetected = true;
-            }
-        case East:
-            if(pos.y != 0): grid[pos.y-1][pos.x] = gravities.GetTerrainType(LEFT);
-            if(pos.y != 5): grid[pos.y+1][pos.x] = gravities.GetTerrainType(RIGHT);
-            if(pos.x != 5) {
-                grid[pos.y][pos.x+1] = gravities.GetTerrainType(VERTICAL);
-                if(grid[pos.y][pos.x+1] == WATER): waterDetected = true;
-            }
-        case West:
-            if(pos.y != 0): grid[pos.y-1][pos.x] = gravities.GetTerrainType(RIGHT);
-            if(pos.y != 5): grid[pos.y+1][pos.x] = gravities.GetTerrainType(LEFT);
-            if(pos.x != 0) {
-                grid[pos.y][pos.x-1] = gravities.GetTerrainType(VERTICAL);
-                if(grid[pos.y][pos.x-1] == WATER): waterDetected = true;
-            }
-    }
-}
-
-ColourType Robot::identifyHouse() {
+Colour::ColourType Robot::identifyHouse() {
     // we may want to take an average reading here
    return colourSensor.ReadColour();
 }
@@ -449,39 +350,40 @@ void Robot::inidicateRedHouse() {
     digitalWrite(redHouseLed, HIGH);
 }
 
-void Robot::inidicateYellowHouse() {
+void Robot::indiciateYellowHouse() {
     digitalWrite(yellowHouseLed, HIGH);
 }
 
 void Robot::computeNextSurveyAGoal() {
-    e = findValidEndGoal(Coordinate(pos.x, pos.y-1));
+    Coordinate e = findValidSurveyGoal(Coordinate{pos.x, pos.y-1});
     goals = pathPlan(e);
 }
 
-Coordinate findValidEndGoal(Coordinate oneAbove) {
+Coordinate Robot::findValidSurveyGoal(Coordinate oneAbove) {
     Coordinate validTile;
-    if oneAbove == FLAT {
+
+    if(grid[oneAbove.y][oneAbove.x] == FLAT) {
         validTile = oneAbove;
     } else {
-        validTileFound = false;
-        Coordinate leftOfAbove(oneAbove.x-1, oneAbove.y);
-        Coordinate rightOfAbove(oneAbove.x+1, oneAbove.y);
+        bool validTileFound = false;
+        Coordinate leftOfAbove{oneAbove.x-1, oneAbove.y};
+        Coordinate rightOfAbove{oneAbove.x+1, oneAbove.y};
 
         while(!validTileFound) {
-            tileToLeft = grid[leftOfAbove.y][leftOfAbove.x];
+            Tile tileToLeft = grid[leftOfAbove.y][leftOfAbove.x];
 
             if(tileToLeft == FLAT) {
                 validTile = leftOfAbove;
                 validTileFound = true;
             } else {
-                tileToRight = grid[rightOfAbove.y][rightOfAbove.x];
+                Tile tileToRight = grid[rightOfAbove.y][rightOfAbove.x];
 
                 if(tileToRight == FLAT) {
                     validTile = rightOfAbove;
                     validTileFound = true;
                 } else {
-                    leftOfAbove = Coordinate(leftOfAbove.x-1, leftOfAbove.y);
-                    rightOfAbove = Coordinate(leftOfAbove.x-1, leftOfAbove.y);
+                    leftOfAbove = Coordinate{leftOfAbove.x-1, leftOfAbove.y};
+                    rightOfAbove = Coordinate{leftOfAbove.x-1, leftOfAbove.y};
                 }
             }
         }
@@ -494,47 +396,47 @@ void Robot::computeNextPOIGoal() {
     goals = pathPlan(psoi.peek());
 }
 
-Stack<Coordinate> Robot::pathPlan(Coordinate e) {
+StackArray<Coordinate> Robot::pathPlan(Coordinate e) {
     Node costMap[MAP_WIDTH][MAP_HEIGHT];
 
     // consider making this a member variable, you flush it every time, save memory
-    // use pointers to nodes instead??? probably should eh ....
+    // use pointers to nodes instead??? probably should eh ...
 
-    PriorityQueue<Node> frontier = PriorityQueue<Node>(compare);
-    Node start = {Coordinate(pos.x, pos.y)};
+    QueueArray<Node> frontier;
+    Node start;
+    start.self = Coordinate{pos.x, pos.y};
     start.seen = true;
     frontier.push(start);
 
     costMap[start.self.y][start.self.y] = start;
-    initialOrientationCheck = true;
+    bool firstNodeCase = true;
 
     while(!frontier.isEmpty()) {
         Node current = frontier.pop();
-
-        if(current.self == e) {
-            break;
-        }
-
         // get valid neighbours
-        Stack<Node> neighbours(5);
+        StackArray<Node> neighbours;
 
         int currX = current.self.x;
         int currY = current.self.y;
 
+        if(current.self.x == e.x && current.self.y == e.y) {
+            break;
+        }
+
         if(currY > 0) {
-            if(grid[currY-1][currX]) != WATER):
+            if(!(grid[currY-1][currX]) == WATER)
                 neighbours.push(costMap[currY-1][currX]);
         }
         if(currY < MAP_HEIGHT-1) {
-            if(grid[currY+1][currX]) != WATER):
+            if(!(grid[currY+1][currX]) == WATER)
                 neighbours.push(costMap[currY+1][currX]);
         }
         if(currX > 0) {
-            if(grid[currY][currX-1]) != WATER):
+            if(!(grid[currY][currX-1]) == WATER)
                 neighbours.push(costMap[currY][currX-1]);
         }
         if(currX < MAP_WIDTH-1) {
-            if(grid[currY][currX+1]) != WATER):
+            if(!(grid[currY][currX+1]) == WATER)
                 neighbours.push(costMap[currY][currX+1]);
         }
 
@@ -545,13 +447,12 @@ Stack<Coordinate> Robot::pathPlan(Coordinate e) {
             // travel cost + turn cost
             int newCost = 1 +
                 current.cost +
-                turnCost(&firstNodeCase, currParent.self, curr.self, nxt.self) +
+                turnCost(&firstNodeCase, current.parent, current.self, nxt.self) +
                 tileCost(grid[nxt.self.y][nxt.self.x]);
 
             if(nxt.seen == false || newCost < nxt.cost) {
                 costMap[nxt.self.y][nxt.self.x].cost = newCost;
-                costMap[nxt.self.y][nxt.self.x].priority = newCost + heuristic(e, nxt.self);
-                costMap[nxt.self.y][nxt.self.x].parent = current;
+                costMap[nxt.self.y][nxt.self.x].parent = Coordinate{currX, currY};
                 costMap[nxt.self.y][nxt.self.x].seen = true;
 
                 frontier.push(costMap[nxt.self.y][nxt.self.x]);
@@ -561,65 +462,55 @@ Stack<Coordinate> Robot::pathPlan(Coordinate e) {
 
     // post process here, go backwards in costMap
     Node focus = costMap[e.y][e.x];
-    Direction focusDir = Nothing; // have an enum value for no direction!!!
-    Stack<Coordinate> path;
+    Direction focusDir = Nothing;
+    StackArray<Coordinate> path;
 
     // iterate back to your starting position
-    while(!(focus.self == pos)){
-        p = costMap[focus.self.y][focus.self.y].parent
-        Direction nextDir = dirFromParent(p.self, focus.self)
+    while(!(focus.self.x == pos.x && focus.self.y == pos.y)){
+        Coordinate p = costMap[focus.self.y][focus.self.x].parent;
+        Direction nextDir = dirFromParent(p, focus.self);
 
-        if(nextDir != focusDir) {
-            path.push(focus.self)
-        }
+        if(nextDir != focusDir) path.push(focus.self);
 
-        focus = p;
+        focus = costMap[p.y][p.x];
         focusDir = nextDir;
     }
 
     return path;
 }
 
-bool compare(Node a, Node b) {
-  return a.priority < b.priority;
-}
-
-int heuristic(Coordinate a, Coordinate b) {
-    return abs(a.x - b.x) + abs(a.y - b.y)
-}
-
-int turnCost(bool *firstNodeCase, Coordinate currParent, Coordinate curr, Coordinate nxt) {
+int Robot::turnCost(bool *firstNodeCase, Coordinate currParent, Coordinate curr, Coordinate nxt) {
     Direction orientation;
 
     if(*firstNodeCase) {
         *firstNodeCase = false;
-        orientation = nav.getCurrentDirection();
+        orientation = navGetCurrentDirection();
     } else {
         orientation = dirFromParent(currParent, curr);
     }
 
     switch (orientation) {
         case North:
-            if nxt.y < curr.y: return 0;
+            if(nxt.y < curr.y) return 0;
         case South:
-            if nxt.y > curr.y: return 0;
+            if(nxt.y > curr.y) return 0;
         case East:
-            if nxt.x > curr.x: return 0;
+            if(nxt.x > curr.x)return 0;
         case West:
-            if nxt.x < curr.x: return 0;
+            if(nxt.x < curr.x) return 0;
     }
 
-    return 1; // whatever the cost of turning is :(
+    return 1;
 }
 
-Direction dirFromParent(Coordinate parent, Coordinate current) {
-    if(parent.y > current.y): return North;
-    if(parent.y < current.y): return South;
-    if(parent.x > current.x): return West;
-    if(parent.x < current.x): return East;
+Direction Robot::dirFromParent(Coordinate parent, Coordinate current) {
+    if(parent.y > current.y) return North;
+    if(parent.y < current.y) return South;
+    if(parent.x > current.x) return West;
+    if(parent.x < current.x) return East;
 }
 
-int tileCost(Tile t) {
+int Robot::tileCost(Tile t) {
     switch (t) {
         case SAND:
             return 2;
@@ -629,3 +520,15 @@ int tileCost(Tile t) {
 
     return 1;
 }
+
+void Robot::setTargetDistToGoal() {}
+
+void Robot::pathPlanSurveyBState() {}
+
+void Robot::navGoReverse() {}
+
+void Robot::navGoForward() {}
+
+void Robot::navTurnLeft() {}
+
+void Robot::navTurnRight() {}
