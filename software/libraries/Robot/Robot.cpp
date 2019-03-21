@@ -500,7 +500,7 @@ Stack<Coordinate> Robot::pathPlan(Coordinate e) {
     // consider making this a member variable, you flush it every time, save memory
     // use pointers to nodes instead??? probably should eh ....
 
-    PriorityQueue<Node> frontier = PriorityQueue<Node>(compare);
+    QueueArray<Node> frontier;
     Node start = {Coordinate(pos.x, pos.y)};
     start.seen = true;
     frontier.push(start);
@@ -557,6 +557,8 @@ Stack<Coordinate> Robot::pathPlan(Coordinate e) {
                 frontier.push(costMap[nxt.self.y][nxt.self.x]);
             }
         }
+
+        neighbours.~Stack();
     }
 
     // post process here, go backwards in costMap
@@ -578,14 +580,6 @@ Stack<Coordinate> Robot::pathPlan(Coordinate e) {
     }
 
     return path;
-}
-
-bool compare(Node a, Node b) {
-  return a.priority < b.priority;
-}
-
-int heuristic(Coordinate a, Coordinate b) {
-    return abs(a.x - b.x) + abs(a.y - b.y)
 }
 
 int turnCost(bool *firstNodeCase, Coordinate currParent, Coordinate curr, Coordinate nxt) {
