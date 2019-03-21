@@ -12,9 +12,13 @@ void setup() {
   Serial.print("Starting...");
 }
 
+int num_tiles;
+
 void loop() {
-  Serial.print(US.ReadAverageDistance(1000));
-  Serial.print("cm");
+  Serial.print(US.ReadNumTiles(10000, num_tiles));
+  Serial.print(" status, ");
+  Serial.print(num_tiles);
+  Serial.print(" tiles");
   Serial.println();
 
   delay(16);
