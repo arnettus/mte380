@@ -19,4 +19,4 @@ private:
 	int redPin_, greenPin_, bluePin_;
 };
 
-#endif 
+#endif

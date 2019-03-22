@@ -5,6 +5,11 @@
 #include <StackArray.h>
 #include <Colour.h>
 #include <QueueArray.h>
+#include <Flame.h>
+#include <Ultrasonic.h>
+#include <Colour.h>
+#include <Gravity.h>
+#include <Beacon.h>
 
 const int MAP_WIDTH = 6;
 const int MAP_HEIGHT = 6;
@@ -45,7 +50,12 @@ struct Coordinate{
 
 class Robot {
   public:
-    Robot();
+    Robot(int leftFlamePin, int rightFlamePin,
+    int leftTrigPinUltra, int leftEchoPinUltra,
+    int rightTrigPinUltra, int rightEchoPinUltra,
+    int S0, int S1, int S2, int S3, int OUT,  int capacity,
+    int redPin, int greenPin, int bluePin
+    );
 
     void pathPlan(StackArray<Coordinate> *path, Coordinate e);
 
@@ -59,12 +69,12 @@ class Robot {
     };
 
     Tile grid[MAP_WIDTH][MAP_HEIGHT] = {
-            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
-            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
-            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
-            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
-            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
-            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT}
+        {FLAT, FLAT, FLAT, WATER , FLAT, FLAT},
+        {FLAT, GRAVEL, FLAT, FLAT, SAND, FLAT},
+        {WATER ,FLAT, FLAT, FLAT, FLAT, FLAT},
+        {FLAT, FLAT, FLAT, SAND, FLAT, GRAVEL},
+        {FLAT, SAND, FLAT, FLAT, WATER , FLAT},
+        {FLAT, FLAT, GRAVEL, FLAT, FLAT, FLAT}
     };
 
     void initializeSensors();
@@ -106,6 +116,18 @@ class Robot {
     StackArray<Coordinate> psoi;
     StackArray<Coordinate> housePsoi;
     StackArray<Coordinate> foodpsoi;
+
+    Flame leftFlame;
+    Flame rightFlame;
+    Ultrasonic leftUltra;
+    Ultrasonic rightUltra;
+    Colour colo;
+
+    // Gravity grav;
+
+    Beacon beac;
+    // navigator
+    // fan
 
     bool foodFound;
 
