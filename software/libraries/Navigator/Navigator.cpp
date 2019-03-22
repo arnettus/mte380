@@ -5,7 +5,7 @@ const float ENC1_TO_DIST = 2000 / 28.3;
 
 const unsigned long TURN_TIMEOUT_MS = 1400;
 
-const float MAGNET_DETECTED_MAGNITUDE = 80;
+const float MAGNET_DETECTED_MAGNITUDE = 40;
 const float MAGNET_DETECTED_X = 40;
 const float MAGNET_DETECTED_Y = 40;
 const float MAGNET_DETECTED_Z = 40;
@@ -84,7 +84,7 @@ void Navigator::turnLeft() {
 
         if (currentAngle < 180)
             currentAngle += 360;
-        
+
         pidl.begin(targetAngle, currentAngle);
         float speed = 0;
         unsigned long t = millis();
@@ -180,7 +180,7 @@ void Navigator::turnRight() {
             if (nextDirection == North && s.orientation.x < 180) {    // Handle the 0-360 boundary
                 break;
             }
-            
+
             speed = pidr.compute(s.orientation.x);
             if (speed > 0)
                 _turnRightMotorCommand(speed);
@@ -353,10 +353,10 @@ void Navigator::printIMUOffsets() {
     if (!st)
         Serial.println("Unable to read the offsets");
 
-    snprintf(msg, 128, "a_x: %d, a_y: %d, a_z: %d, a_r: %d\ng_x: %d, g_y: %d, g_z: %d\nm_x: %d, m_y: %d:, m_z: %d, m_r: %d\n", 
-            offsets.accel_offset_x, offsets.accel_offset_y, offsets.accel_offset_z, offsets.accel_radius, 
+    snprintf(msg, 128, "a_x: %d, a_y: %d, a_z: %d, a_r: %d\ng_x: %d, g_y: %d, g_z: %d\nm_x: %d, m_y: %d:, m_z: %d, m_r: %d\n",
+            offsets.accel_offset_x, offsets.accel_offset_y, offsets.accel_offset_z, offsets.accel_radius,
             offsets.gyro_offset_x, offsets.gyro_offset_y, offsets.gyro_offset_z,
-            offsets.mag_offset_x, offsets.mag_offset_y, offsets.mag_offset_z, offsets.mag_radius); 
+            offsets.mag_offset_x, offsets.mag_offset_y, offsets.mag_offset_z, offsets.mag_radius);
 
     Serial.println(msg);
 }
