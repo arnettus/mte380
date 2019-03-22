@@ -17,7 +17,7 @@ const PIDSettings PIDTurnLeft = {
     .kp = 1,
     .ki = 0.0001,
     .kd = 0,
-    .outputMin = 71,
+    .outputMin = 74,
     .outputMax = 240,
     .tolerance = 1,
     .useKpOnMeasure = false,
@@ -27,7 +27,7 @@ const PIDSettings PIDTurnRight = {
     .kp = 1.25,
     .ki = 0.0002,
     .kd = 0,
-    .outputMin = 73,
+    .outputMin = 76,
     .outputMax = 250,
     .tolerance = 1,
     .useKpOnMeasure = false,
@@ -202,7 +202,7 @@ void Navigator::goForward(uint16_t targetDistance) {
         currentDistance = motors.GetMotor1Enc() / ENC1_TO_DIST;
         speed = pidfwd.compute(currentDistance);
 
-        printTargetDistanceSpeed(targetDistance, currentDistance, speed);
+        //printTargetDistanceSpeed(targetDistance, currentDistance, speed);
 
         if (speed > 0)
             _goForwardMotorCommand(speed);
@@ -222,7 +222,7 @@ void Navigator::goReverse(uint16_t targetDistance) {
         currentDistance = abs(motors.GetMotor1Enc() / ENC1_TO_DIST);
         speed = pidrev.compute(currentDistance);
 
-        printTargetDistanceSpeed(targetDistance, currentDistance, speed);
+        //printTargetDistanceSpeed(targetDistance, currentDistance, speed);
 
         if (speed > 0)
             _goReverseMotorCommand(speed);
