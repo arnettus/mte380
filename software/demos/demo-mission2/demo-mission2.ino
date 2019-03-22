@@ -82,6 +82,10 @@ void loop() {
             digitalWrite(51, LOW);
             digitalWrite(52, HIGH);
             digitalWrite(53, HIGH);
+        } else {
+            digitalWrite(51, HIGH);
+            digitalWrite(52, HIGH);
+            digitalWrite(53, HIGH);
         }
         checkForColour = false;
     }
