@@ -15,7 +15,7 @@ GravityConfig config1 = {.capture = GravityConfig::NONE,
 
 // constructors
 Navigator nav;
-Colour col(4, 7, 8, 11, 13, 15);
+Colour col(37, 35, 33, 31, 39, 15);
 Gravity gravity(config1);
 
 // Flags
@@ -27,7 +27,7 @@ bool checkForColour = true;
 void setup() {
     col.InitColour();
     Wire.begin();
-//    gravity.Init();
+    gravity.Init();
     Serial.begin(9600);
     Serial.println("Starting..");
         if (!nav.begin()) {
@@ -55,30 +55,34 @@ void setup() {
 
 
 void loop() {
-//    if(checkForColour){
-//        // Travel up to house
-//        nav.goForward(30);
-//        delay(1000);
-//        nav.turnLeft();
-//        nav.goForward(30);
-//        nav.turnRight();
-//        nav.goForward(30);
-//        delay(1000);
-//        nav.turnLeft();
-//        nav.goForward(30);
-//        delay(1000);
-//
-//        // Approach and determine which house it is
-//        nav.goForward(ceil(gravity.GetDistance() - 50)/10);
-//        if(col.ReadColour() == Colour::RED){
-//            digitalWrite(51, LOW);
-//            digitalWrite(52, HIGH);
-//            digitalWrite(53, HIGH);
-//        } else if (col.ReadColour() == Colour::YELLOW){
-//            digitalWrite(51, LOW);
-//            digitalWrite(52, HIGH);
-//            digitalWrite(53, HIGH);
-//        }
-//        checkForColour = false;
-//    }
+    if(checkForColour){
+        // Travel up to house
+        nav.goForward(30);
+        delay(1000);
+        nav.turnLeft();
+        delay(1000);
+        nav.goForward(30);
+        delay(1000);
+        nav.turnRight();
+        delay(1000);
+        nav.goForward(30);
+        delay(1000);
+        nav.turnLeft();
+        delay(1000);
+        nav.goForward(30);
+        delay(1000);
+
+        // Approach and determine which house it is
+        nav.goForward(ceil(gravity.GetDistance() - 50)/10);
+        if(col.ReadColour() == Colour::RED){
+            digitalWrite(51, LOW);
+            digitalWrite(52, HIGH);
+            digitalWrite(53, HIGH);
+        } else if (col.ReadColour() == Colour::YELLOW){
+            digitalWrite(51, LOW);
+            digitalWrite(52, HIGH);
+            digitalWrite(53, HIGH);
+        }
+        checkForColour = false;
+    }
 }
