@@ -376,10 +376,10 @@ void Navigator::demoManualMode() {
     char key;
 
     Serial.println("Entered manual mode.");
-    //motors.SetMotor1Enc(0);
+    motors.SetMotor1Enc(0);
 
     while (1) {
-        //Serial.println(motors.GetMotor1Enc());
+        Serial.println(motors.GetMotor1Enc());
         if (Serial.available() > 0) {
             key = Serial.read();
             switch (key) {
@@ -436,16 +436,16 @@ void Navigator::demoManualMode() {
                     Serial.println(detectedMagnet());
                     break;
                 case 'u':
-                    goForward(30);
+                    goForward(32);
                     break;
                 case 'j':
-                    goReverse(30);
+                    goReverse(33);
                     break;
                 case 'i':
-                    goForward(60);
+                    goForward(63);
                     break;
                 case 'k':
-                    goReverse(60);
+                    goReverse(63);
                     break;
                 case 'o':
                     goForward(90);
