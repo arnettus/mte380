@@ -47,10 +47,10 @@ void Robot::go() {
             turnRightState();
         }
 
-        if(housesVisited == 2) st = DONE;
+        //if(housesVisited == 2) st = DONE;
 
         //if(foodFound) st = DONE;
-        delay(1000);
+       // delay(500);
         //st = DONE;
     }
 
@@ -146,14 +146,13 @@ void Robot::pathPlanState() {
 
     if(prevSt == STRAIGHT && isAtLastGoal()) {
         Coordinate g = goals.pop();
-        if(g.x == START_X && g.y == START_Y && !foodFound && housesVisited == 2) {
+
+        if(g.x == START_X && g.y == START_Y && foodFound && housesVisited == 2) {
             st = DONE;
             prevSt = PATH_PLAN;
 
             return;
-        }
-
-        if(!foodFound) {
+        } else if(!foodFound) {
             foodpsoi.pop();
 
             detectFood(); // check magnotometer reading
@@ -161,7 +160,8 @@ void Robot::pathPlanState() {
             computeNextPOIGoal(); // go to house or food again
         } else if(housesVisited == 2) { // go home
             emptyGoals();
-            goals.push(Coordinate{pos.x, pos.y});
+            computeNextPOIGoal();
+            //goals.push(Coordinate{START_X, START_Y});
         } else { // else you're at a house
             Coordinate h{psoi.peek().x, psoi.peek().y}; // house of concern
             psoi.pop();
