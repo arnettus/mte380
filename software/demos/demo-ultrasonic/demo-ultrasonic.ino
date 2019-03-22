@@ -2,14 +2,37 @@
 
 //int trigPin = 25;
 //int echoPin = 24;
-int trigPin = 27;
-int echoPin = 26;
+int leftTrigPin = 25;
+int leftEchoPin = 24;
+int rightTrigPin = 27;
+int rightEchoPin = 26;
 long duration, cm;
 
 // 24 left echo 25 left trigger
 // 26 right echo 27 right trigger
 
-Ultrasonic US(trigPin, echoPin);
+Ultrasonic left_us(leftTrigPin, leftEchoPin);
+Ultrasonic right_us(rightTrigPin, rightEchoPin);
+
+int num_tiles;
+int max_left_tiles = 5;
+int max_right_tiles = 5;
+
+void PrintUltrasonic() {
+    Serial.print("Left: ");
+    Serial.print(left_us.ReadNumTiles(250, max_left_tiles, num_tiles));
+    Serial.print(" status, ");
+    Serial.print(num_tiles);
+    Serial.println(" tiles");
+
+    Serial.print("Right: ");
+    Serial.print(right_us.ReadNumTiles(250, max_right_tiles, num_tiles));
+    Serial.print(" status, ");
+    Serial.print(num_tiles);
+    Serial.println(" tiles");
+
+    delay(16);
+}
 
 void setup() {
   //Serial Port begin
@@ -17,16 +40,8 @@ void setup() {
   Serial.print("Starting...");
 }
 
-int num_tiles;
-int max_tiles = 1;
-
 void loop() {
-  Serial.print(US.ReadNumTiles(1000, max_tiles, num_tiles));
-  Serial.print(" status, ");
-  Serial.print(num_tiles);
-  Serial.print(" tiles");
-//  Serial.print(US.ReadAverageDistance(1000));
-  Serial.println();
+  PrintUltrasonic();
 
-  delay(16);
+//  delay(16);
 }
