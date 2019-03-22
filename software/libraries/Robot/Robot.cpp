@@ -47,6 +47,8 @@ void Robot::go() {
             turnRightState();
         }
 
+        if(housesVisited == 2) st = DONE;
+
         //if(foodFound) st = DONE;
         delay(1000);
         //st = DONE;
@@ -161,8 +163,6 @@ void Robot::pathPlanState() {
             emptyGoals();
             goals.push(Coordinate{pos.x, pos.y});
         } else { // else you're at a house
-            housesVisited += 1;
-
             Coordinate h{psoi.peek().x, psoi.peek().y}; // house of concern
             psoi.pop();
 
@@ -224,6 +224,10 @@ void Robot::houseState() {
     haltNav();
 
     if(!changedStateToTurnTowardsCoordinate(housePsoi.peek())) {
+        housesVisited += 1;
+
+        Serial.println("IM IN THE HOUSEEEEEEE");
+
         // targetDistToGoal = gravity.reading - HOUSE_PROXIMITY <---- main
         targetDistToGoal = HOUSE_PROXIMITY;
         navGoForward();
@@ -412,11 +416,11 @@ Colour::ColourType Robot::identifyHouse() {
 }
 
 void Robot::inidicateRedHouse() {
-    digitalWrite(redHouseLed, HIGH);
+    //digitalWrite(redHouseLed, HIGH);
 }
 
 void Robot::indiciateYellowHouse() {
-    digitalWrite(yellowHouseLed, HIGH);
+    //digitalWrite(yellowHouseLed, HIGH);
 }
 
 void Robot::computeNextSurveyAGoal() {
