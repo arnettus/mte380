@@ -17,8 +17,8 @@ const int HALF_TILE_WIDTH = 15;
 const int GOAL_CAP = 35;
 const int POI_CAP = 35;
 
-const int START_X = 3;
-const int START_Y = 5;
+const int START_X = 0;
+const int START_Y = 0;
 
 const int LAST_ROW = 0;
 
@@ -47,7 +47,7 @@ class Robot {
   public:
     Robot();
 
-    StackArray<Coordinate> pathPlan(Coordinate e);
+    void pathPlan(StackArray<Coordinate> *path, Coordinate e);
 
     enum Tile {
         FLAT,
@@ -62,7 +62,7 @@ class Robot {
             {FLAT, FLAT, FLAT, SAND, FLAT, FLAT},
             {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
             {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
-            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
+            {SAND, FLAT, FLAT, FLAT, FLAT, FLAT},
             {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
             {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT}
     };

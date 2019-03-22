@@ -38,8 +38,8 @@ void Robot::go() {
     prevSt = STRAIGHT;
     pos = Coordinate{START_X, START_Y};
 
-    psoi.push(Coordinate{1, 4});
-    housesVisited == 0;
+    psoi.push(Coordinate{5, 5});
+    housesVisited = 0;
 
     computeNextPOIGoal();
     dir = North;
@@ -61,6 +61,9 @@ void Robot::go() {
         } else if (st == TURN_RIGHT) {
             turnRightState();
         }
+
+        delay(1000);
+        //st = DONE;
     }
 
 
@@ -78,8 +81,10 @@ void Robot::printState() {
         Serial.print(",");
         Serial.println(pos.y);
         Serial.print(" prevSt: ");
-        Serial.print(prevSt);
-        Serial.println("");
+        Serial.println(prevSt);
+        Serial.print(" dir: ");
+        Serial.println(dir);
+        Serial.println("----- END STATE ---- ");
 }
 
 void Robot::initializeLidar() {}
@@ -144,9 +149,13 @@ void Robot::pathPlanState() {
 
         psoi.pop();
     } else {
-        if(isAtGoal()) goals.pop();
+        if(isAtGoal()) {
+            goals.pop();
+        }
 
-        if(!changedStateToTurnTowardsCoordinate(goals.peek())) {
+        bool turnaz = changedStateToTurnTowardsCoordinate(goals.peek());
+
+        if(!turnaz) {
             setTargetDistToGoal();
             st = STRAIGHT;
         }
@@ -156,9 +165,9 @@ void Robot::pathPlanState() {
 }
 
 void Robot::computeNextPOIGoal() {
-    if(housesVisited == 2){ // go home
-        goals = pathPlan(Coordinate{START_X, START_Y});
-    }
+    // if(housesVisited == 2){ // go home
+    //     goals = pathPlan(Coordinate{START_X, START_Y});
+    // }
 
     // find best adjacent tile to a house
     int bestScore = 20;
@@ -191,15 +200,8 @@ void Robot::computeNextPOIGoal() {
         }
     }
 
-
-    Serial.println("----best coordinate after-----");
-    Serial.print(bestCoordinate.x);
-    Serial.print(",");
-    Serial.println(bestCoordinate.y);
-    Serial.println("---------");
-
-    // Serial.println("yahhhh");
-    goals = pathPlan(bestCoordinate);
+    emptyGoals();
+    pathPlan(&goals, bestCoordinate);
 }
 
 void Robot::printGoals() {
@@ -226,6 +228,7 @@ void Robot::printGoals() {
     }
 
     Serial.println("");
+    Serial.println("------- end goals ------");
 }
 
 void Robot::houseState() {
@@ -263,6 +266,7 @@ void Robot::straightState() {
 void Robot::turnLeftState() {
     navTurnLeft();
 
+
     if(dir == North) {
         dir = West;
     } else {
@@ -277,19 +281,20 @@ void Robot::turnLeftState() {
 void Robot::turnRightState() {
     navTurnRight();
 
+
     if(dir == West) {
         dir = North;
     } else {
         dir = static_cast<Direction>(static_cast<int>(dir) + 90);
     }
 
+
     st = prevSt;
     prevSt = TURN_RIGHT;
 }
 
 bool Robot::isAtGoal() {
-    Coordinate goal = Coordinate{goals.peek()};
-    return goal.x == pos.x && goal.y == pos.y;
+    return goals.peek().x == pos.x && goals.peek().y == pos.y;
 }
 
 bool Robot::isAtLastGoal() {
@@ -301,35 +306,34 @@ bool Robot::isOnRow(int y) {
 }
 
 bool Robot::changedStateToTurnTowardsCoordinate(Coordinate c) {
-    Coordinate nextGoal{c};
     bool turned = false;
     Direction ori = dir;
 
-    if(nextGoal.x > pos.x) {
+    if(c.x > pos.x) {
         if(ori != East) {
             if(ori == North) st = TURN_RIGHT;
             else st = TURN_LEFT;
 
             turned = true;
         }
-    } else if(nextGoal.x < pos.x) {
+    } else if(c.x < pos.x) {
         if(ori != West) {
             if(ori == South) st = TURN_RIGHT;
             else st = TURN_LEFT;
 
             turned = true;
         }
-    } else if(nextGoal.y > pos.y) {
-        if(ori != North) {
-            if(ori == West) st = TURN_RIGHT;
-            else st = TURN_LEFT;
+    } else if(c.y > pos.y) {
+        if(ori != South) {
+            if(ori == West) st = TURN_LEFT;
+            else st = TURN_RIGHT;
 
             turned = true;
         }
-    } else {
-        if(ori != South) {
-            if(ori == East) st = TURN_RIGHT;
-            else st = TURN_LEFT;
+    } else if(c.y < pos.y) {
+        if(ori != North) {
+            if(ori == East) st = TURN_LEFT;
+            else st = TURN_RIGHT;
 
             turned = true;
         }
@@ -421,7 +425,6 @@ void Robot::indiciateYellowHouse() {
 
 void Robot::computeNextSurveyAGoal() {
     Coordinate e = findValidSurveyGoal(Coordinate{pos.x, pos.y-1});
-    goals = pathPlan(e);
 }
 
 Coordinate Robot::findValidSurveyGoal(Coordinate oneAbove) {
@@ -480,17 +483,7 @@ void Robot::neighbours(StackArray<Coordinate> *n, int currX, int currY) {
     }
 }
 
-StackArray<Coordinate> Robot::pathPlan(Coordinate e) {
-    Serial.println("start");
-    Serial.println(pos.x);
-    Serial.println(pos.y);
-
-
-    Serial.println("end");
-    Serial.println(e.x);
-    Serial.println(e.y);
-    Serial.println("");
-
+void Robot::pathPlan(StackArray<Coordinate> *path, Coordinate e) {
     Node costMap[MAP_WIDTH][MAP_HEIGHT];
 
     QueueArray<Coordinate> frontier;
@@ -536,21 +529,24 @@ StackArray<Coordinate> Robot::pathPlan(Coordinate e) {
     Coordinate focus{e.x,e.y};
     Direction focusDir = Nothing;
 
-    StackArray<Coordinate> path;
+        // Coordinate p = costMap[focus.y][focus.x].parent;
 
-    // iterate back to your starting position
+        // Direction nextDir = dirFromParent(p, focus);
+
+        // if(nextDir != focusDir) path.push(focus);
+
+        // focus = p;
+        // focusDir = nextDir;
+
     while(!(focus.x == pos.x && focus.y == pos.y)){
         Coordinate p = costMap[focus.y][focus.x].parent;
-
         Direction nextDir = dirFromParent(p, focus);
 
-        if(nextDir != focusDir) path.push(focus);
-
-        focus = p;
+        if(nextDir != focusDir) path->push(focus);
+        focus.x = p.x;
+        focus.y = p.y;
         focusDir = nextDir;
     }
-
-    return path;
 }
 
 int Robot::turnCost(Coordinate currParent, Coordinate curr, Coordinate nxt) {
