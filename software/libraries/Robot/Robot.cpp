@@ -1,4 +1,5 @@
 #include "Robot.h"
+#include <SoftwareSerial.h>
 
 Robot::Robot(
         int lidarCapacity,
@@ -32,6 +33,7 @@ Robot::Robot(
     yellowHouseLed(yellowHouseLed)
 {
     goals.push(pos);
+    dir = North;
 }
 
 void Robot::initializeSensors() {
@@ -42,9 +44,9 @@ void Robot::initializeSensors() {
 }
 
 void Robot::go() {
-    // special initial case
+    special initial case
     int tiles;
-    bool objectThere = findObject(&tiles); // on right side
+    bool objectThere = findObjectRight(&tiles); // on right side
 
     if(objectThere) {
         grid[pos.y-tiles][pos.x] = MISSION;
@@ -88,12 +90,22 @@ void Robot::go() {
                 turnRightState();
                 break;
         }
+
+        // simulation:
+        Serial.println("");
+        Serial.println("STATE ---------");
+        Serial.println("st: ");
+        Serial.print(st);
+        Serial.println("pos: ");
+        Serial.print(pos.x);
+        Serial.print(",");
+        Serial.print(pos.y);
+        Serial.println("prevSt: ");
+        Serial.print(prevSt);
+        Serial.println("");
     }
 
     // you're done, blink some LED or something
-
-    // simulation:
-    // Serial.print
 }
 
 void Robot::initializeLidar() {}
@@ -129,7 +141,7 @@ void Robot::pathPlanSurveyAState() {
         emptyGoals();
         locatePOI();
     } else {
-        if(isAtGoal()) removeGoal();
+        if(isAtGoal()) goals.pop();
 
         if(prevSt == TURN_LEFT || prevSt == TURN_RIGHT){
             locatePOI();
@@ -150,14 +162,14 @@ void Robot::pathPlanState() {
     haltNav();
 
     if(prevSt == STRAIGHT && isAtLastGoal()) {
-        removeGoal();
+        goals.pop();
 
         if(housesVisited == 2) st = DONE;
         else st = HOUSE;
 
-        removePOI();
+        psoi.pop();
     } else {
-        if(isAtGoal()) removeGoal();
+        if(isAtGoal()) goals.pop();
 
         if(!changedStateToTurnTowardsCoordinate(goals.peek())) {
             setTargetDistToGoal();
@@ -203,7 +215,13 @@ void Robot::straightState() {
 void Robot::turnLeftState() {
     navTurnLeft();
 
-    dir = static_cast<Direction>(static_cast<int>(dir) - 90);
+    if(dir == North) {
+        dir = West;
+    } else {
+        dir = static_cast<Direction>(static_cast<int>(dir) - 90);
+    }
+
+
     st = prevSt;
     prevSt = TURN_LEFT;
 }
@@ -211,21 +229,14 @@ void Robot::turnLeftState() {
 void Robot::turnRightState() {
     navTurnRight();
 
-    dir = static_cast<Direction>(static_cast<int>(dir) + 90);
+    if(dir == West) {
+        dir = North;
+    } else {
+        dir = static_cast<Direction>(static_cast<int>(dir) + 90);
+    }
+
     st = prevSt;
     prevSt = TURN_RIGHT;
-}
-
-void Robot::emptyGoals() {
-    goals.isEmpty();
-}
-
-void Robot::removeGoal() {
-    goals.pop();
-}
-
-void Robot::removePOI() {
-    psoi.pop();
 }
 
 bool Robot::isAtGoal() {
@@ -285,14 +296,14 @@ void Robot::updateCurrentPosition() {
 }
 
 void Robot::locatePOI() {
-    long leftSonicReading = leftSonic.ReadAverageDistance(100);
-    long rightSonicReading = rightSonic.ReadAverageDistance(100);
+    int tilesRight;
+    int tilesLeft;
 
-    if(leftSonicReading + SONIC_TOL < expectedDistanceOnLeft()) {
-        int poiX = pos.x - numTilesAway(leftSonicReading);
+    if(findObjectLeft(&tilesLeft)) {
+        int poiX = pos.x - tilesLeft;
         int poiY = pos.y;
 
-        Coordinate c = Coordinate{poiX, poiY};
+        Coordinate c{poiX, poiY};
         grid[poiY][poiX] = MISSION;
         psoi.push(c);
 
@@ -307,8 +318,8 @@ void Robot::locatePOI() {
         }
     }
 
-    if(rightSonicReading + SONIC_TOL < expectedDistanceOnRight()) {
-        int poiX = pos.x + numTilesAway(rightSonicReading);
+    if(findObjectRight(&tilesRight)) {
+        int poiX = pos.x + tilesRight;
         int poiY = pos.y;
 
         Coordinate c{poiX, poiY};
@@ -327,7 +338,12 @@ void Robot::locatePOI() {
     }
 }
 
-bool Robot::findObject(int *tiles) {
+bool Robot::findObjectRight(int *tiles) {
+    *tiles = 5;
+    return true;
+}
+
+bool Robot::findObjectLeft(int *tiles) {
     *tiles = 5;
     return true;
 }
@@ -580,3 +596,9 @@ void Robot::navGoForward() {}
 void Robot::navTurnLeft() {}
 
 void Robot::navTurnRight() {}
+
+void Robot::emptyGoals() {
+    while(!goals.isEmpty()) {
+        goals.pop();
+    }
+}

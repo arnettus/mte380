@@ -165,10 +165,7 @@ class Robot {
 
     // Goals
     void turnTowardsNextGoal();
-    void removeGoal();
-    void removePOI();
     void computeNextSurveyAGoal();
-    void emptyGoals();
     bool isAtGoal();
     bool isAtLastGoal();
     bool changedStateToTurnTowardsCoordinate(Coordinate c);
@@ -194,7 +191,9 @@ class Robot {
 
     // Sensors
     void updateCurrentPosition();
-    bool findObject(int *tiles);
+    bool findObjectRight(int *tiles);
+    bool findObjectLeft(int *tiles);
+    void emptyGoals();
 
     void neighbours(StackArray<Coordinate> n, int x, int y);
 
