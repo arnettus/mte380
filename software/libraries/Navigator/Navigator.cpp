@@ -3,8 +3,9 @@
 
 const float ENC1_TO_DIST = 2000 / 28.3;
 
-const unsigned long TURN_TIMEOUT_MS = 1500;
+const unsigned long TURN_TIMEOUT_MS = 1400;
 
+const float MAGNET_DETECTED_MAGNITUDE = 80;
 const float MAGNET_DETECTED_X = 40;
 const float MAGNET_DETECTED_Y = 40;
 const float MAGNET_DETECTED_Z = 40;
@@ -16,7 +17,7 @@ const PIDSettings PIDTurnLeft = {
     .kp = 1,
     .ki = 0.0001,
     .kd = 0,
-    .outputMin = 63,
+    .outputMin = 71,
     .outputMax = 240,
     .tolerance = 1,
     .useKpOnMeasure = false,
@@ -26,7 +27,7 @@ const PIDSettings PIDTurnRight = {
     .kp = 1.25,
     .ki = 0.0002,
     .kd = 0,
-    .outputMin = 70,
+    .outputMin = 73,
     .outputMax = 250,
     .tolerance = 1,
     .useKpOnMeasure = false,
@@ -235,7 +236,7 @@ void Navigator::halt() {
 }
 
 void Navigator::readMagnetometer() {
-    char f[3][8];
+    char f[4][8];
     char msg[64];
     sensors_event_t s;
     imu.getEvent(&s, Adafruit_BNO055::VECTOR_MAGNETOMETER);
@@ -243,16 +244,19 @@ void Navigator::readMagnetometer() {
     dtostrf(s.magnetic.x, 7, 3, f[0]);
     dtostrf(s.magnetic.y, 7, 3, f[1]);
     dtostrf(s.magnetic.z, 7, 3, f[2]);
+    dtostrf(sqrt((s.magnetic.x*s.magnetic.x) + (s.magnetic.y*s.magnetic.y) + (s.magnetic.z*s.magnetic.z)), 7, 3, f[3]);
 
-    snprintf(msg, 64, "x: %s, y: %s, z: %s", f[0], f[1], f[2]);
+    snprintf(msg, 64, "x: %s, y: %s, z: %s, mag: %s", f[0], f[1], f[2], f[3]);
     Serial.println(msg);
 }
 
 bool Navigator::detectedMagnet() {
     sensors_event_t s;
     imu.getEvent(&s, Adafruit_BNO055::VECTOR_MAGNETOMETER);
+    float mag = sqrt((s.magnetic.x*s.magnetic.x) + (s.magnetic.y*s.magnetic.y) + (s.magnetic.z*s.magnetic.z));
 
-    return abs(s.magnetic.x) >= MAGNET_DETECTED_X || abs(s.magnetic.y) >= MAGNET_DETECTED_Y || abs(s.magnetic.z) >= MAGNET_DETECTED_Z;
+    return mag >= MAGNET_DETECTED_MAGNITUDE;
+    //return abs(s.magnetic.x) >= MAGNET_DETECTED_X || abs(s.magnetic.y) >= MAGNET_DETECTED_Y || abs(s.magnetic.z) >= MAGNET_DETECTED_Z;
 }
 
 inline void Navigator::_goForwardMotorCommand(float speed) {
