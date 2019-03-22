@@ -30,11 +30,11 @@ bool Fan::TurnOn(FanMode mode) {
 }
 
 bool Fan::TurnOff() {
-    bool result = Set(Fan::FanMode::ARM);
-    esc_.detach();
-    return result;
+    return Set(Fan::FanMode::ARM);
 }
 
 bool Fan::Shutdown() {
-    return Set(Fan::FanMode::OFF);
+    bool result = Set(Fan::FanMode::OFF);
+    esc_.detach();
+    return result;
 }
