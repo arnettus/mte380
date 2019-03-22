@@ -8,11 +8,9 @@
 GravityConfig config1 = {.capture = GravityConfig::NONE,
                          .range = GravityConfig::STANDARD,
                          .address = 0x29,
-                         .reset_pin = 4,
+                         .reset_pin = 40,
                          .timeout = 500,
-                         .capacity = 10,
-                         .min_range = 60,
-                         .max_range = 400
+                         .capacity = 10
 };
 
 // constructors
@@ -28,8 +26,10 @@ bool checkForColour = true;
 
 void setup() {
     col.InitColour();
-    gravity.Init();
+    Wire.begin();
+//    gravity.Init();
     Serial.begin(9600);
+    Serial.println("Starting..");
         if (!nav.begin()) {
         Serial.println("Navigator failed to begin");
         while (1) {
@@ -50,33 +50,35 @@ void setup() {
     Serial.println("Starting!");
 }
 
-// Travel up to house
-nav.goForward(30);
-delay(1000);
-nav.turnLeft();
-nav.goForward(30);
-nav.turnRight();
-nav.goForward(30);
-delay(1000);
-nav.turnLeft();
-nav.goForward(30);
-delay(1000);
-
-// Approach and determine which house it is
-nav.goForward(ceil(gravity.getDistance() - 50)/10);
-if(col.ReadColour() == Colour::RED){
-    digitalWrite(51, LOW);
-    digitalWrite(52, HIGH);
-    digitalWrite(53, HIGH);
-} else if (col.ReadColour() == Colour::YELLOW){
-    digitalWrite(51, LOW);
-    digitalWrite(52, HIGH);
-    digitalWrite(53, HIGH);
-}
-
 
 
 
 
 void loop() {
+//    if(checkForColour){
+//        // Travel up to house
+//        nav.goForward(30);
+//        delay(1000);
+//        nav.turnLeft();
+//        nav.goForward(30);
+//        nav.turnRight();
+//        nav.goForward(30);
+//        delay(1000);
+//        nav.turnLeft();
+//        nav.goForward(30);
+//        delay(1000);
+//
+//        // Approach and determine which house it is
+//        nav.goForward(ceil(gravity.GetDistance() - 50)/10);
+//        if(col.ReadColour() == Colour::RED){
+//            digitalWrite(51, LOW);
+//            digitalWrite(52, HIGH);
+//            digitalWrite(53, HIGH);
+//        } else if (col.ReadColour() == Colour::YELLOW){
+//            digitalWrite(51, LOW);
+//            digitalWrite(52, HIGH);
+//            digitalWrite(53, HIGH);
+//        }
+//        checkForColour = false;
+//    }
 }
