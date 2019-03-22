@@ -3,11 +3,7 @@
 
 #include <stdio.h> // Not sure if this is needed.
 #include <StackArray.h>
-#include <TFLidar.h>
-#include <Flame.h>
-#include <Ultrasonic.h>
 #include <Colour.h>
-#include <Gravity.h>
 #include <QueueArray.h>
 
 const int MAP_WIDTH = 6;
@@ -49,24 +45,7 @@ struct Coordinate{
 
 class Robot {
   public:
-    Robot(
-        int lidarCapacity,
-        int leftFlameSensorPin,
-        int rightFlameSensoPin,
-        int fanPin,
-        int rightSonicTrigPin,
-        int rightSonicEchoPin,
-        int leftSonicTrigPin,
-        int leftSonicEchoPin,
-        int cS0,
-        int cS1,
-        int cS2,
-        int cS3,
-        int cOUT,
-        int cLEDPin,
-        int redHouseLed,
-        int yellowHouseLed
-    );
+    Robot();
 
     StackArray<Coordinate> pathPlan(Coordinate e);
 
@@ -93,6 +72,9 @@ class Robot {
 
   private:
 
+    void printState();
+    void printGoals();
+
     enum State {
         PATH_PLAN_SURVEY_A,
         PATH_PLAN_SURVEY_B,
@@ -111,12 +93,6 @@ class Robot {
     };
 
     // Sensors
-    TFLidar lidar;
-    Flame flameLeft;
-    Flame flameRight;
-    Ultrasonic rightSonic;
-    Ultrasonic leftSonic;
-    Colour colourSensor;
 
     Coordinate pos;
     Direction dir;
@@ -162,6 +138,7 @@ class Robot {
     void turnRightState();
 
     // Path planning
+    int heuristic(Coordinate a, Coordinate b);
 
     // Goals
     void turnTowardsNextGoal();
@@ -195,7 +172,7 @@ class Robot {
     bool findObjectLeft(int *tiles);
     void emptyGoals();
 
-    void neighbours(StackArray<Coordinate> n, int x, int y);
+    void neighbours(StackArray<Coordinate> *n, int x, int y);
 
     // Distances
     int numTilesAway(int distance);

@@ -1,39 +1,7 @@
 #include "Robot.h"
 #include <SoftwareSerial.h>
 
-Robot::Robot(
-        int lidarCapacity,
-        int leftFlamePin,
-        int rightFlamePin,
-        int fanPin,
-        int rightSonicTrigPin,
-        int rightSonicEchoPin,
-        int leftSonicTrigPin,
-        int leftSonicEchoPin,
-        int cS0,
-        int cS1,
-        int cS2,
-        int cS3,
-        int cOUT,
-        int cLEDPin,
-        int redHouseLed,
-        int yellowHouseLed
-    ) :
-    st(PATH_PLAN_SURVEY_A),
-    prevSt(STRAIGHT),
-    pos{START_X, START_Y},
-    lidar(lidarCapacity),
-    flameLeft(leftFlamePin),
-    flameRight(rightFlamePin),
-    rightSonic(rightSonicTrigPin, rightSonicEchoPin),
-    leftSonic(leftSonicTrigPin, leftSonicEchoPin),
-    colourSensor(cS0, cS1, cS2, cS3, cOUT),
-    cLEDPin(cLEDPin),
-    redHouseLed(redHouseLed),
-    yellowHouseLed(yellowHouseLed)
-{
-    goals.push(pos);
-    dir = North;
+Robot::Robot() {
 }
 
 void Robot::initializeSensors() {
@@ -44,68 +12,74 @@ void Robot::initializeSensors() {
 }
 
 void Robot::go() {
-    special initial case
-    int tiles;
-    bool objectThere = findObjectRight(&tiles); // on right side
+    // special initial case
+    // int tiles;
+    // bool objectThere = findObjectRight(&tiles); // on right side
 
-    if(objectThere) {
-        grid[pos.y-tiles][pos.x] = MISSION;
-        psoi.push(Coordinate{pos.x, pos.y-tiles});
+    // if(objectThere) {
+    //     grid[pos.y-tiles][pos.x] = MISSION;
+    //     psoi.push(Coordinate{pos.x, pos.y-tiles});
 
-        if(flameRight.isFlameInSight()) {
-            navTurnRight();
-            putOutFire();
+    //     if(flameRight.isFlameInSight()) {
+    //         navTurnRight();
+    //         putOutFire();
 
-            // The poi was a candle.
-            grid[pos.y-tiles][pos.x] = CANDLE;
-            psoi.pop();
-        }
-    }
+    //         // The poi was a candle.
+    //         grid[pos.y-tiles][pos.x] = CANDLE;
+    //         psoi.pop();
+    //     }
+    // }
 
-    if(!(dir == North)) {
-        navTurnRight();
-    }
+    // if(!(dir == North)) {
+    //     navTurnRight();
+    // }
+
+    st = PATH_PLAN;
+    prevSt = STRAIGHT;
+    pos = Coordinate{START_X, START_Y};
+
+    psoi.push(Coordinate{1, 4});
+    housesVisited == 0;
+
+    computeNextPOIGoal();
+    dir = North;
 
     while(st != DONE) {
-        switch (st) {
-            case PATH_PLAN_SURVEY_A:
-                pathPlanSurveyAState();
-                break;
-            case PATH_PLAN_SURVEY_B:
-                pathPlanSurveyBState();
-                break;
-            case PATH_PLAN:
-                pathPlanState();
-                break;
-            case HOUSE:
-                houseState();
-                break;
-            case STRAIGHT:
-                straightState();
-                break;
-            case TURN_LEFT:
-                turnLeftState();
-                break;
-            case TURN_RIGHT:
-                turnRightState();
-                break;
-        }
+        printState();
+        printGoals();
 
-        // simulation:
-        Serial.println("");
-        Serial.println("STATE ---------");
-        Serial.println("st: ");
-        Serial.print(st);
-        Serial.println("pos: ");
-        Serial.print(pos.x);
-        Serial.print(",");
-        Serial.print(pos.y);
-        Serial.println("prevSt: ");
-        Serial.print(prevSt);
-        Serial.println("");
+        if(st == PATH_PLAN_SURVEY_A) {
+            pathPlanSurveyAState();
+        } else if(st == PATH_PLAN) {
+            pathPlanState();
+        } else if (st == HOUSE) {
+            houseState();
+        } else if (st == STRAIGHT) {
+            straightState();
+        } else if (st == TURN_LEFT) {
+            turnLeftState();
+        } else if (st == TURN_RIGHT) {
+            turnRightState();
+        }
     }
 
-    // you're done, blink some LED or something
+
+    Serial.println("you got out!!!!");
+    printState();
+}
+
+void Robot::printState() {
+        Serial.println("");
+        Serial.println("-------- STATE ---------");
+        Serial.print(" st: ");
+        Serial.println(st);
+        Serial.print(" pos: ");
+        Serial.print(pos.x);
+        Serial.print(",");
+        Serial.println(pos.y);
+        Serial.print(" prevSt: ");
+        Serial.print(prevSt);
+        Serial.println("");
 }
 
 void Robot::initializeLidar() {}
@@ -114,14 +88,13 @@ void Robot::initializeFireFighter() {}
 
 void Robot::shutDownFireFighter() {}
 
-void Robot::initializeColour() {
-    pinMode(cLEDPin, OUTPUT);
-    digitalWrite(cLEDPin, HIGH); // maybe you can just turn this on right before you read?
-}
+void Robot::initializeColour() {}
 
 void Robot::initializeNavigator() {}
 
-void Robot::haltNav() {}
+void Robot::haltNav() {
+    return;
+}
 
 void Robot::pathPlanSurveyAState() {
     haltNav();
@@ -164,8 +137,10 @@ void Robot::pathPlanState() {
     if(prevSt == STRAIGHT && isAtLastGoal()) {
         goals.pop();
 
-        if(housesVisited == 2) st = DONE;
-        else st = HOUSE;
+        // if(housesVisited == 2) st = DONE;
+        // else st = HOUSE;
+
+        st = DONE;
 
         psoi.pop();
     } else {
@@ -178,6 +153,79 @@ void Robot::pathPlanState() {
     }
 
     prevSt = PATH_PLAN;
+}
+
+void Robot::computeNextPOIGoal() {
+    if(housesVisited == 2){ // go home
+        goals = pathPlan(Coordinate{START_X, START_Y});
+    }
+
+    // find best adjacent tile to a house
+    int bestScore = 20;
+
+    Coordinate bestCoordinate;
+    bestCoordinate.x = psoi.peek().x;
+    bestCoordinate.y = psoi.peek().y;
+
+    // Serial.println("----best coordinate before-----");
+    // Serial.print(bestCoordinate.x);
+    // Serial.print(",");
+    // Serial.println(bestCoordinate.y);
+    // Serial.println("---------");
+
+    StackArray<Coordinate> n;
+    neighbours(&n, bestCoordinate.x, bestCoordinate.y);
+
+    // Serial.println("-----n count----");
+    // Serial.println(n.count());
+    // Serial.println("-----n count----");
+
+
+    while(!n.isEmpty()){
+        Coordinate nxt = n.pop();
+        int score = heuristic(nxt, pos);
+
+        if(score < bestScore) {
+            bestCoordinate = nxt;
+            bestScore = score;
+        }
+    }
+
+
+    Serial.println("----best coordinate after-----");
+    Serial.print(bestCoordinate.x);
+    Serial.print(",");
+    Serial.println(bestCoordinate.y);
+    Serial.println("---------");
+
+    // Serial.println("yahhhh");
+    goals = pathPlan(bestCoordinate);
+}
+
+void Robot::printGoals() {
+    Serial.println("");
+    Serial.println("----- goals -------");
+    StackArray<Coordinate> aux;
+
+    while(!goals.isEmpty()) {
+        Coordinate g = goals.pop();
+        aux.push(g);
+
+        Serial.println("");
+        Serial.print("[");
+        Serial.print(g.x);
+        Serial.print(",");
+        Serial.print(g.y);
+        Serial.print("]");
+        Serial.println("");
+    }
+
+    while(!aux.isEmpty()) {
+        Coordinate g = aux.pop();
+        goals.push(g);
+    }
+
+    Serial.println("");
 }
 
 void Robot::houseState() {
@@ -307,15 +355,15 @@ void Robot::locatePOI() {
         grid[poiY][poiX] = MISSION;
         psoi.push(c);
 
-        if(flameLeft.isFlameInSight()) {
-            navTurnLeft();
-            putOutFire();
-            navTurnRight();
+        // if(flameLeft.isFlameInSight()) {
+        //     navTurnLeft();
+        //     putOutFire();
+        //     navTurnRight();
 
-            // The poi was a candle.
-            grid[poiY][poiX] = CANDLE;
-            psoi.pop();
-        }
+        //     // The poi was a candle.
+        //     grid[poiY][poiX] = CANDLE;
+        //     psoi.pop();
+        // }
     }
 
     if(findObjectRight(&tilesRight)) {
@@ -326,15 +374,15 @@ void Robot::locatePOI() {
         grid[poiY][poiX] = MISSION;
         psoi.push(c);
 
-        if(flameRight.isFlameInSight()) {
-            navTurnRight();
-            putOutFire();
-            navTurnLeft();
+        // if(flameRight.isFlameInSight()) {
+        //     navTurnRight();
+        //     putOutFire();
+        //     navTurnLeft();
 
-            // The poi was a candle.
-            grid[poiY][poiX] = CANDLE;
-            psoi.pop();
-        }
+        //     // The poi was a candle.
+        //     grid[poiY][poiX] = CANDLE;
+        //     psoi.pop();
+        // }
     }
 }
 
@@ -360,7 +408,7 @@ void Robot::putOutFire() {
 
 Colour::ColourType Robot::identifyHouse() {
     // we may want to take an average reading here
-   return colourSensor.ReadColour();
+   return Colour::RED;
 }
 
 void Robot::inidicateRedHouse() {
@@ -409,55 +457,40 @@ Coordinate Robot::findValidSurveyGoal(Coordinate oneAbove) {
     return validTile;
 }
 
-void Robot::computeNextPOIGoal() {
-    if(housesVisited == 2){ // go home
-        goals = pathPlan(Coordinate{START_X, START_Y});
-    }
-
-    // find best adjacent tile to a house
-    int bestScore = 13;
-    Coordinate bestCoordinate = psoi.peek();
-
-    StackArray<Coordinate> n;
-    neighbours(n, bestCoordinate.x, bestCoordinate.y);
-
-    while(!n.isEmpty()){
-        Coordinate nxt = n.pop();
-        int score = heuristic(nxt, psoi.peek());
-
-        if(score < bestScore) {
-            bestCoordinate = nxt;
-            bestScore = score;
-        }
-    }
-
-    goals = pathPlan(bestCoordinate);
-}
-
-int heuristic(Coordinate a, Coordinate b) {
+int Robot::heuristic(Coordinate a, Coordinate b) {
     return abs(a.x - b.x) + abs(b.y - b.y);
 }
 
-void Robot::neighbours(StackArray<Coordinate> n, int currX, int currY) {
+void Robot::neighbours(StackArray<Coordinate> *n, int currX, int currY) {
     if(currY > 0) { // above
         if(!(grid[currY-1][currX]) == WATER)
-            n.push(Coordinate{currX, currY-1});
+            n->push(Coordinate{currX, currY-1});
     }
     if(currY < MAP_HEIGHT-1) { // below
         if(!(grid[currY+1][currX]) == WATER)
-            n.push(Coordinate{currX, currY+1});
+            n->push(Coordinate{currX, currY+1});
     }
     if(currX > 0) { // left
         if(!(grid[currY][currX-1]) == WATER)
-            n.push(Coordinate{currX-1, currY});
+            n->push(Coordinate{currX-1, currY});
     }
     if(currX < MAP_WIDTH-1) { // right
         if(!(grid[currY][currX+1]) == WATER)
-            n.push(Coordinate{currX+1, currY});
+            n->push(Coordinate{currX+1, currY});
     }
 }
 
 StackArray<Coordinate> Robot::pathPlan(Coordinate e) {
+    Serial.println("start");
+    Serial.println(pos.x);
+    Serial.println(pos.y);
+
+
+    Serial.println("end");
+    Serial.println(e.x);
+    Serial.println(e.y);
+    Serial.println("");
+
     Node costMap[MAP_WIDTH][MAP_HEIGHT];
 
     QueueArray<Coordinate> frontier;
@@ -478,7 +511,7 @@ StackArray<Coordinate> Robot::pathPlan(Coordinate e) {
         }
 
         StackArray<Coordinate> n;
-        neighbours(n, currX, currY);
+        neighbours(&n, currX, currY);
 
         // iterate over each neighbour
         while(!n.isEmpty()) {
@@ -589,13 +622,21 @@ void Robot::setTargetDistToGoal() {}
 
 void Robot::pathPlanSurveyBState() {}
 
-void Robot::navGoReverse() {}
+void Robot::navGoReverse() {
+    return;
+}
 
-void Robot::navGoForward() {}
+void Robot::navGoForward() {
+    return;
+}
 
-void Robot::navTurnLeft() {}
+void Robot::navTurnLeft() {
+    return;
+}
 
-void Robot::navTurnRight() {}
+void Robot::navTurnRight() {
+    return;
+}
 
 void Robot::emptyGoals() {
     while(!goals.isEmpty()) {
