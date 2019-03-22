@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+
+
 struct Terrain {
     enum TerrainType {
         UNKN = 0,
@@ -41,6 +43,41 @@ struct Terrain {
                 return "";
         }
     }
+
+    TerrainType map [4][6][6] = {
+        {
+            {FLAT, FLAT, FLAT, GRAV, FLAT, FLAT},
+            {FLAT, SAND, FLAT, FLAT, PIT , FLAT},
+            {PIT , FLAT, FLAT, SAND, FLAT, FLAT},
+            {FLAT, FLAT, FLAT, FLAT, FLAT, GRAV},
+            {FLAT, GRAV, FLAT, FLAT, SAND, FLAT},
+            {FLAT, FLAT, PIT , FLAT, FLAT, FLAT}
+        },
+        {
+            {FLAT, FLAT, FLAT, PIT , FLAT, FLAT},
+            {FLAT, GRAV, FLAT, FLAT, SAND, FLAT},
+            {PIT , FLAT, FLAT, FLAT, FLAT, FLAT},
+            {FLAT, FLAT, FLAT, SAND, FLAT, GRAV},
+            {FLAT, SAND, FLAT, FLAT, PIT , FLAT},
+            {FLAT, FLAT, GRAV, FLAT, FLAT, FLAT}
+        },
+        {
+            {FLAT, FLAT, FLAT, PIT , FLAT, FLAT},
+            {FLAT, SAND, FLAT, FLAT, GRAV, FLAT},
+            {GRAV, FLAT, FLAT, FLAT, FLAT, FLAT},
+            {FLAT, FLAT, SAND, FLAT, FLAT, PIT },
+            {FLAT, PIT , FLAT, FLAT, SAND, FLAT},
+            {FLAT, FLAT, GRAV, FLAT, FLAT, FLAT}
+        },
+        {
+            {FLAT, FLAT, FLAT, GRAV, FLAT, FLAT},
+            {FLAT, PIT , FLAT, FLAT, SAND, FLAT},
+            {GRAV, FLAT, SAND, FLAT, FLAT, FLAT},
+            {FLAT, FLAT, FLAT, FLAT, FLAT, PIT },
+            {FLAT, SAND, FLAT, FLAT, GRAV, FLAT},
+            {FLAT, FLAT, PIT , FLAT, FLAT, FLAT}
+        }
+    };
 };
 
 #endif // TERRAIN_H

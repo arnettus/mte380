@@ -62,6 +62,10 @@ public:
 
     }
 
+    int getCapacity() {
+        return capacity;
+    }
+
 #ifdef NON_ARDUINO
     void print() {
         std::cout << "Values: ";

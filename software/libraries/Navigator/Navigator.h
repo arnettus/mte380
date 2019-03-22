@@ -4,26 +4,28 @@
 #include <Motors.h>
 #include <PID.h>
 #include <Adafruit_BNO055.h>
-
-enum Direction {
-    North,
-    East,
-    South,
-    West,
-    Nothing
-};
+#include <TFMiniLidar.h>
 
 class Navigator {
 public:
+    enum Direction {
+        North,
+        East,
+        South,
+        West,
+        Nothing
+    };
+
     Navigator();
     bool begin();
     void turnLeft();
     void turnRight();
-    void goForward();
-    void goReverse();
+    void goForward(uint16_t targetDistance);
+    void goReverse(uint16_t targetDistance);
     void halt();
 
     void readMagnetometer();
+    bool detectedMagnet();
 
     void demoManualMode();
     void demoIMULoopOrientation();
@@ -37,6 +39,8 @@ private:
     Adafruit_BNO055 imu;
     PID             pidl;
     PID             pidr;
+    PID             pidfwd;
+    PID             pidrev;
     Motors          motors;
 
     static Direction _getNextDirectionLeft(Direction d);
@@ -45,6 +49,8 @@ private:
     static String _getDirectionAsString(Direction d);
     inline void _turnLeftMotorCommand(float speed);
     inline void _turnRightMotorCommand(float speed);
+    inline void _goForwardMotorCommand(float speed);
+    inline void _goReverseMotorCommand(float speed);
 };
 
 #endif
