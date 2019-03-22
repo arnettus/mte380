@@ -6,16 +6,16 @@
 #include <Adafruit_BNO055.h>
 #include <TFMiniLidar.h>
 
-enum Direction {
-    North,
-    East,
-    South,
-    West,
-    Nothing
-};
-
 class Navigator {
 public:
+    enum Direction {
+        North,
+        East,
+        South,
+        West,
+        Nothing
+    };
+
     Navigator();
     bool begin();
     void turnLeft();
