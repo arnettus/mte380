@@ -17,8 +17,8 @@ const int HALF_TILE_WIDTH = 15;
 const int GOAL_CAP = 35;
 const int POI_CAP = 35;
 
-const int START_X = 0;
-const int START_Y = 0;
+const int START_X = 3;
+const int START_Y = 5;
 
 const int LAST_ROW = 0;
 
@@ -59,10 +59,10 @@ class Robot {
     };
 
     Tile grid[MAP_WIDTH][MAP_HEIGHT] = {
-            {FLAT, FLAT, FLAT, SAND, FLAT, FLAT},
             {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
             {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
-            {SAND, FLAT, FLAT, FLAT, FLAT, FLAT},
+            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
+            {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
             {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT},
             {FLAT, FLAT, FLAT, FLAT, FLAT, FLAT}
     };
@@ -74,6 +74,9 @@ class Robot {
 
     void printState();
     void printGoals();
+
+    int numTimesCalledLocatePoi;
+    void Robot::pathPlanSurveyAStateSpecial();
 
     enum State {
         PATH_PLAN_SURVEY_A,
@@ -93,7 +96,6 @@ class Robot {
     };
 
     // Sensors
-
     Coordinate pos;
     Direction dir;
     State st;
@@ -102,6 +104,10 @@ class Robot {
 
     StackArray<Coordinate> goals;
     StackArray<Coordinate> psoi;
+    StackArray<Coordinate> housePsoi;
+    StackArray<Coordinate> foodpsoi;
+
+    bool foodFound;
 
     int targetDistToGoal;
     int housesVisited;
@@ -120,6 +126,8 @@ class Robot {
     void initializeColour();
     void initializeLED();
 
+    void detectFood();
+
     // navigator placeholders ->
     void initializeNavigator();
     void haltNav();
@@ -129,8 +137,6 @@ class Robot {
     void navTurnRight();
 
     // State functions
-    void pathPlanSurveyAState();
-    void pathPlanSurveyBState();
     void pathPlanState();
     void straightState();
     void houseState();
@@ -176,7 +182,6 @@ class Robot {
 
     // Distances
     int numTilesAway(int distance);
-    Coordinate findValidSurveyGoal(Coordinate oneAbove);
     int turnCost(Coordinate currParent, Coordinate curr, Coordinate nxt);
     Direction dirFromParent(Coordinate parent, Coordinate current);
     int tileCost(Tile t);
