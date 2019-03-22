@@ -13,7 +13,7 @@ class Ultrasonic {
         static const int offset_mm = 71;
         static const int tileLength_mm = 300;
         static const int minDetection_mm = 0;
-        static const int maxDetection_mm = 140;
+        static const int maxOffset_mm = 100;
         enum Object {
             OBJECT_NOT_FOUND,
             OBJECT_FOUND,
@@ -24,7 +24,7 @@ class Ultrasonic {
         // Methods
         long ReadDistance();
         long ReadAverageDistance(int numSamples);
-        Object ReadNumTiles(int numSamples, int& numTiles);
+        Object ReadNumTiles(int numSamples, int maxTiles, int& numTiles);
 };
 
-#endif
+#endif // ULTRASONIC_H
