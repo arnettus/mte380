@@ -29,6 +29,7 @@ public:
         TOO_CLOSE,
         TOO_FAR
     };
+    Gravity();
     Gravity(const GravityConfig& config);
     void Init();
     uint16_t GetDistance() const;

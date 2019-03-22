@@ -1,5 +1,17 @@
 #include "Gravity.h"
 
+GravityConfig default_config = {.capture = GravityConfig::NONE,
+                                .range = GravityConfig::STANDARD,
+                                .address = 0x29,
+                                .reset_pin = 40,
+                                .timeout = 500,
+                                .capacity = 10,
+                                .min_range = 60,
+                                .max_range = 400
+};
+
+Gravity::Gravity(): cfg_(default_config), distance_(default_config.capacity) {}
+
 Gravity::Gravity(const GravityConfig& config): cfg_(config), distance_(config.capacity) {}
 
 void Gravity::Init() {
