@@ -25,7 +25,6 @@ TFMiniLidar::TFMiniLidar(int windowSize) : averageDistance(windowSize){
   // Empty constructor
 }
 
-
 boolean TFMiniLidar::init(HardwareSerial* _streamPtr) {
   // Store reference to stream/serial object
   streamPtr = _streamPtr;  
@@ -35,7 +34,6 @@ boolean TFMiniLidar::init(HardwareSerial* _streamPtr) {
 boolean TFMiniLidar::start(){
   // Clear state
   averageDistance.reset();
-  delay(5000);
   distance = -1;
   strength = -1;
   state = READY;

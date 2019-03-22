@@ -13,8 +13,8 @@ void setup() {
 }
 
 void loop() {
-    //nav.demoIMULoop();
-    nav.demoIMULoopMagnetometer();
-    //nav.demoManualMode();
+    //nav.demoIMULoopOrientation();
+    //nav.demoIMULoopMagnetometer();
+    nav.demoManualMode();
     return;
 }

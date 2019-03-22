@@ -88,6 +88,15 @@ void Motors::DriveFwd(){
     Motors::_DriveRearRightFWD(77); // M3
 }
 
+void Motors::DriveFwd(int fl, int fr, int rl, int rr) {
+    // Front motors FWD
+    Motors::_DriveFrontLeftFWD(fl); // M2
+    Motors::_DriveFrontRightFWD(fr); // M1
+    // Rear motors FWD
+    Motors::_DriveRearLeftFWD(rl); // M4
+    Motors::_DriveRearRightFWD(rr); // M3
+}
+
 void Motors::DriveRev(){
     // Front motors FWD
     Motors::_DriveFrontLeftREV(79); // M2
@@ -95,6 +104,15 @@ void Motors::DriveRev(){
     // Rear motors FWD
     Motors::_DriveRearLeftREV(84); // M4
     Motors::_DriveRearRightREV(86); // M3
+}
+
+void Motors::DriveRev(int fl, int rl, int fr, int rr) {
+    // Front motors REV
+    Motors::_DriveFrontLeftREV(fl); // M2
+    Motors::_DriveFrontRightREV(fr); // M1
+    // Rear motors REV
+    Motors::_DriveRearLeftREV(rl); // M4
+    Motors::_DriveRearRightREV(rr); // M3
 }
 
 void Motors::Halt(){

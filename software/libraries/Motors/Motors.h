@@ -12,6 +12,8 @@ class Motors
         void DriveRev();
         void TurnLeft();
         void TurnRight();
+        void DriveFwd(int fl, int fr, int rl, int rr);
+        void DriveRev(int fl, int fr, int rl, int rr);
         void TurnLeft(int fl, int rl, int fr, int rr);
         void TurnRight(int fl, int rl, int fr, int rr);
         void TurnRightSlowly();

@@ -1,24 +1,55 @@
 #include <Navigator.h>
+#include <TFMiniLidar.h>
+
+const float ENC1_TO_DIST = 2000 / 28.3;
+
+const unsigned long TURN_TIMEOUT_MS = 1400;
+
+const float MAGNET_DETECTED_MAGNITUDE = 80;
+const float MAGNET_DETECTED_X = 40;
+const float MAGNET_DETECTED_Y = 40;
+const float MAGNET_DETECTED_Z = 40;
 
 void printTargetAngleSpeed(float target, float angle, float speed);
+void printTargetDistanceSpeed(uint16_t target, uint16_t distance, float speed);
 
 const PIDSettings PIDTurnLeft = {
-    .kp = 1.8,
-    .ki = 0.00005,
-    .kd = 4,
-    .outputMin = 80,
+    .kp = 1,
+    .ki = 0.0001,
+    .kd = 0,
+    .outputMin = 71,
     .outputMax = 240,
-    .tolerance = 0.2,
+    .tolerance = 1,
     .useKpOnMeasure = false,
 };
 
 const PIDSettings PIDTurnRight = {
-    .kp = 1.7,
+    .kp = 1.25,
+    .ki = 0.0002,
+    .kd = 0,
+    .outputMin = 73,
+    .outputMax = 250,
+    .tolerance = 1,
+    .useKpOnMeasure = false,
+};
+
+const PIDSettings PIDGoForward = {
+    .kp = 2,
     .ki = 0.0001,
-    .kd = 3.8,
-    .outputMin = 80,
-    .outputMax = 240,
-    .tolerance = 0.2,
+    .kd = 0,
+    .outputMin = 45,
+    .outputMax = 250,
+    .tolerance = 0,
+    .useKpOnMeasure = false,
+};
+
+const PIDSettings PIDGoReverse = {
+    .kp = 2,
+    .ki = 0.0001,
+    .kd = 0,
+    .outputMin = 45,
+    .outputMax = 250,
+    .tolerance = 0,
     .useKpOnMeasure = false,
 };
 
@@ -26,6 +57,8 @@ Navigator::Navigator()
     : currentDirection(North)
     , pidl(PIDTurnLeft)
     , pidr(PIDTurnRight)
+    , pidfwd(PIDGoForward)
+    , pidrev(PIDGoReverse)
     , imu(55)
 {
 }
@@ -54,47 +87,47 @@ void Navigator::turnLeft() {
         
         pidl.begin(targetAngle, currentAngle);
         float speed = 0;
+        unsigned long t = millis();
 
         while (!pidl.isLessThanSetpoint()) {
+            if (millis() - t > TURN_TIMEOUT_MS) {
+                Serial.println("Turn timed out");
+                break;
+            }
+
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
             currentAngle = s.orientation.x;
             if (currentAngle < 180)
                 currentAngle += 360;
 
             speed = pidl.compute(currentAngle);
-            printTargetAngleSpeed(targetAngle, currentAngle, speed);
-
-            if (speed < 0) {
+            if (speed < 0)
                 _turnLeftMotorCommand(abs(speed));
-            }
-            //else
-            //    _turnRightMotorCommand(speed);
         }
     } else {
         pidl.begin(targetAngle, s.orientation.x);
         float speed = 0;
+        unsigned long t = millis();
 
         while (!pidl.isLessThanSetpoint()) {
+            if (millis() - t > TURN_TIMEOUT_MS) {
+                Serial.println("Turn timed out");
+                break;
+            }
+
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
 
             if (nextDirection == North && s.orientation.x > 180) {  // Handle the 0-360 boundary
-                Serial.println(s.orientation.x);
                 break;
             }
 
             speed = pidl.compute(s.orientation.x);
-            printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
-
             if (speed < 0)
                 _turnLeftMotorCommand(abs(speed));
-            //else
-            //    _turnRightMotorCommand(speed);
         }
     }
 
     halt();
-    Serial.print("Stopped at ");
-    Serial.println(s.orientation.x);
     currentDirection = nextDirection;
 }
 
@@ -113,8 +146,14 @@ void Navigator::turnRight() {
 
         pidr.begin(targetAngle, currentAngle);
         float speed = 0;
+        unsigned long t = millis();
 
         while (!pidr.isGreaterThanSetpoint()) {
+            if (millis() - t > TURN_TIMEOUT_MS) {
+                Serial.println("Turn timed out");
+                break;
+            }
+
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
             currentAngle = s.orientation.x;
 
@@ -122,32 +161,29 @@ void Navigator::turnRight() {
                 currentAngle = currentAngle - 360;
 
             speed = pidr.compute(currentAngle);
-            printTargetAngleSpeed(targetAngle, currentAngle, speed);
-
             if (speed > 0)
                 _turnRightMotorCommand(abs(speed));
-            else
-                _turnLeftMotorCommand(speed);
         }
     } else {
         pidr.begin(targetAngle, s.orientation.x);
         float speed = 0;
+        unsigned long t = millis();
 
         while (!pidr.isGreaterThanSetpoint()) {
+            if (millis() - t > TURN_TIMEOUT_MS) {
+                Serial.println("Turn timed out");
+                break;
+            }
+
             imu.getEvent(&s, Adafruit_BNO055::VECTOR_EULER);
 
             if (nextDirection == North && s.orientation.x < 180) {    // Handle the 0-360 boundary
-                Serial.println(s.orientation.x);
                 break;
             }
             
             speed = pidr.compute(s.orientation.x);
-            printTargetAngleSpeed(targetAngle, s.orientation.x, speed);
-
             if (speed > 0)
                 _turnRightMotorCommand(speed);
-            else
-                _turnLeftMotorCommand(abs(speed));
         }
     }
 
@@ -155,12 +191,44 @@ void Navigator::turnRight() {
     currentDirection = nextDirection;
 }
 
-void Navigator::goForward() {
-    motors.DriveFwd();
+void Navigator::goForward(uint16_t targetDistance) {
+    motors.SetMotor1Enc(0);
+    uint16_t currentDistance = 0;
+
+    pidfwd.begin(targetDistance, currentDistance);
+
+    float speed;
+    while (!pidfwd.isGreaterThanSetpoint()) {
+        currentDistance = motors.GetMotor1Enc() / ENC1_TO_DIST;
+        speed = pidfwd.compute(currentDistance);
+
+        printTargetDistanceSpeed(targetDistance, currentDistance, speed);
+
+        if (speed > 0)
+            _goForwardMotorCommand(speed);
+    }
+
+    halt();
 }
 
-void Navigator::goReverse() {
-    motors.DriveRev();
+void Navigator::goReverse(uint16_t targetDistance) {
+    motors.SetMotor1Enc(0);
+    uint16_t currentDistance = 0;
+
+    pidrev.begin(targetDistance, currentDistance);
+
+    float speed;
+    while (!pidrev.hasReachedSetpoint()) {
+        currentDistance = abs(motors.GetMotor1Enc() / ENC1_TO_DIST);
+        speed = pidrev.compute(currentDistance);
+
+        printTargetDistanceSpeed(targetDistance, currentDistance, speed);
+
+        if (speed > 0)
+            _goReverseMotorCommand(speed);
+    }
+
+    halt();
 }
 
 void Navigator::halt() {
@@ -168,7 +236,7 @@ void Navigator::halt() {
 }
 
 void Navigator::readMagnetometer() {
-    char f[3][8];
+    char f[4][8];
     char msg[64];
     sensors_event_t s;
     imu.getEvent(&s, Adafruit_BNO055::VECTOR_MAGNETOMETER);
@@ -176,17 +244,43 @@ void Navigator::readMagnetometer() {
     dtostrf(s.magnetic.x, 7, 3, f[0]);
     dtostrf(s.magnetic.y, 7, 3, f[1]);
     dtostrf(s.magnetic.z, 7, 3, f[2]);
+    dtostrf(sqrt((s.magnetic.x*s.magnetic.x) + (s.magnetic.y*s.magnetic.y) + (s.magnetic.z*s.magnetic.z)), 7, 3, f[3]);
 
-    snprintf(msg, 64, "x: %s, y: %s, z: %s", f[0], f[1], f[2]);
+    snprintf(msg, 64, "x: %s, y: %s, z: %s, mag: %s", f[0], f[1], f[2], f[3]);
     Serial.println(msg);
 }
 
+bool Navigator::detectedMagnet() {
+    sensors_event_t s;
+    imu.getEvent(&s, Adafruit_BNO055::VECTOR_MAGNETOMETER);
+    float mag = sqrt((s.magnetic.x*s.magnetic.x) + (s.magnetic.y*s.magnetic.y) + (s.magnetic.z*s.magnetic.z));
+
+    return mag >= MAGNET_DETECTED_MAGNITUDE;
+    //return abs(s.magnetic.x) >= MAGNET_DETECTED_X || abs(s.magnetic.y) >= MAGNET_DETECTED_Y || abs(s.magnetic.z) >= MAGNET_DETECTED_Z;
+}
+
+inline void Navigator::_goForwardMotorCommand(float speed) {
+    if (speed - 9 < 0) {
+        Serial.println("Speed clipped, did nothing");
+        return;
+    }
+    motors.DriveFwd(speed - 4, speed - 9, speed, speed - 7);
+}
+
+inline void Navigator::_goReverseMotorCommand(float speed) {
+    if (speed - 7 < 0) {
+        Serial.println("Speed clipped, did nothing");
+        return;
+    }
+    motors.DriveRev(speed - 7, speed - 6, speed - 2, speed);
+}
+
 inline void Navigator::_turnLeftMotorCommand(float speed) {
-    motors.TurnLeft(speed, speed - 5, speed, speed - 5);
+    motors.TurnLeft(speed, speed, speed, speed);
 }
 
 inline void Navigator::_turnRightMotorCommand(float speed) {
-    motors.TurnRight(speed - 3, speed, speed - 3, speed);
+    motors.TurnRight(speed, speed, speed, speed);
 }
 
 static String Navigator::_getDirectionAsString(Direction d) {
@@ -282,8 +376,10 @@ void Navigator::demoManualMode() {
     char key;
 
     Serial.println("Entered manual mode.");
+    //motors.SetMotor1Enc(0);
 
     while (1) {
+        //Serial.println(motors.GetMotor1Enc());
         if (Serial.available() > 0) {
             key = Serial.read();
             switch (key) {
@@ -292,13 +388,13 @@ void Navigator::demoManualMode() {
                         halt();
                         Serial.println("Going forward");
                         delay(1000);
-                        goForward();
+                        motors.DriveFwd();
                         ks = W;
                     }
                     break;
                 case 'a':
                     halt();
-                    Serial.print("Turning left");
+                    Serial.println("Turning left");
                     delay(1000);
                     turnLeft();
                     ks = Q;
@@ -308,7 +404,7 @@ void Navigator::demoManualMode() {
                         halt();
                         Serial.println("Going reverse");
                         delay(1000);
-                        goReverse();
+                        motors.DriveRev();
                         ks = S;
                     }
                     break;
@@ -333,8 +429,29 @@ void Navigator::demoManualMode() {
                     Serial.print(Navigator::_getDirectionAsString(currentDirection));
                     Serial.print(", Orientation: ");
                     Serial.println(s.orientation.x);
+                    break;
                 case 'f':
                     readMagnetometer();
+                    Serial.print("Magnet detected: ");
+                    Serial.println(detectedMagnet());
+                    break;
+                case 'u':
+                    goForward(30);
+                    break;
+                case 'j':
+                    goReverse(30);
+                    break;
+                case 'i':
+                    goForward(60);
+                    break;
+                case 'k':
+                    goReverse(60);
+                    break;
+                case 'o':
+                    goForward(90);
+                    break;
+                case 'l':
+                    goReverse(90);
                 default:
                     break;
             }
@@ -370,5 +487,20 @@ void printTargetAngleSpeed(float target, float angle, float speed) {
     dtostrf(angle, 7, 3, floats[1]);
     dtostrf(speed, 7, 3, floats[2]);
     snprintf(msg, 64, "Target Angle: %s, Angle: %s, Speed: %s", floats[0], floats[1], floats[2]);
+    Serial.println(msg);
+}
+
+void printTargetDistanceSpeed(uint16_t target, uint16_t distance, float speed) {
+    static char msg[64];
+    static char f[8];
+
+    dtostrf(speed, 7, 3, f);
+    snprintf(msg, 64, "Target: %u, Distance: %u, Speed: %s", target, distance, f);
+    Serial.println(msg);
+}
+
+void printFloat(float f) {
+    static char msg[8];
+    dtostrf(f, 7, 3, msg);
     Serial.println(msg);
 }
