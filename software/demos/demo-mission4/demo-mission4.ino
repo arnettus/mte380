@@ -25,21 +25,21 @@ void setup() {
 
     delay(5000);
 
-    n.goForward(28);
+    n.goForward(30);
     n.turnLeft();
-    n.goForward(58);
+    n.goForward(60);
     Serial.println("Check pit one");
     delay(3000);
     checkForMagnet();
-    n.goReverse(58);
+    n.goReverse(60);
     n.turnRight();
-    n.goForward(28);
+    n.goForward(30);
     Serial.println("Check pit two");
     delay(3000);
     checkForMagnet();
-    n.goForward(58);
+    n.goForward(60);
     n.turnRight();
-    n.goForward(28);
+    n.goForward(30);
     Serial.println("Check pit three");
     delay(3000);
     checkForMagnet();
