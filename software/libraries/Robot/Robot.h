@@ -35,11 +35,11 @@ const int SONIC_TOL = 10;
 const int FRONT_TOL = 10;
 
 enum Direction {
-    North,
-    East,
-    South,
-    West,
-    Nothing
+    North = 0,
+    East = 90,
+    South = 180,
+    West = 270,
+    Nothing = 999
 };
 
 struct Coordinate{
@@ -119,6 +119,7 @@ class Robot {
     Colour colourSensor;
 
     Coordinate pos;
+    Direction dir;
     State st;
     State bufSt;
     State prevSt;
@@ -150,7 +151,6 @@ class Robot {
     void navGoReverse();
     void navTurnLeft();
     void navTurnRight();
-    Direction navGetCurrentDirection();
 
     // State functions
     void pathPlanSurveyAState();
@@ -171,7 +171,7 @@ class Robot {
     void emptyGoals();
     bool isAtGoal();
     bool isAtLastGoal();
-    bool changedStateToTurnTowardsNextGoal();
+    bool changedStateToTurnTowardsCoordinate(Coordinate c);
 
     // Points of Interest (only relevant during survey mode really)
     void locatePOI();
@@ -194,11 +194,7 @@ class Robot {
 
     // Sensors
     void updateCurrentPosition();
-    void detectAdjTiles();
-    int distanceInFront();
-    int expectedDistanceInFront();
-    int expectedDistanceOnRight();
-    int expectedDistanceOnLeft();
+    bool findObject(int *tiles);
 
     void neighbours(StackArray<Coordinate> n, int x, int y);
 
