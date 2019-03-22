@@ -1,69 +1,54 @@
-#include <Flame.h>
 #include <SoftwareSerial.h>
 #include <Motors.h>
 #include <Fan.h>
-<<<<<<< HEAD
 #include <Flame.h>
-=======
->>>>>>> 7838db71e48186bec995531de1e7781bb97e9c3d
+#include <Navigator.h>
 
 // constructors
 Flame leftFlame(A0);
 Flame rightFlame(A1);
-<<<<<<< HEAD
 Navigator nav;
-=======
-Motors myMotors;
->>>>>>> 7838db71e48186bec995531de1e7781bb97e9c3d
 Fan myFan;
 
 // flags
-bool leftFlameDetected = false;
-bool rightFlameDetected = false;
-volatile bool checkForFlame = false;
+bool checkForFlame = true;
+bool doRotation = false;
 
 void setup() {
-<<<<<<< HEAD
     myFan.Setup();
-=======
->>>>>>> 7838db71e48186bec995531de1e7781bb97e9c3d
     Serial.begin(9600);
-
-    // !!! pretty sure we don't need interrupts for this
-    // noInterrupts();
-    // OCR1A = 0xFFF;   // approximately every 16ms
-
-    // TCCR1A = 0;
-    // TCCR1B = (1 << WGM12)|(1 << CS11)|(1 << CS10);
-    // TCNT1 = 0;
-
-    // TIMSK1 |= _BV(OCIE1A);
-    // interrupts();
+    if (!nav.begin()) {
+        Serial.println("Navigator failed to begin");
+        while (1) {
+            delay(1000);
+        }
+    }
+        
+    Serial.println("Starting in 3 seconds...");
+    delay(3000);
+    Serial.println("Starting!");
 }
 
-
-
-// ISR(TIMER1_COMPA_vect) {
-//     if (!pollMe)
-//         pollMe = true;
-// }
 
 void loop() {
    if (checkForFlame) {
         int threshhold = 980;
         if (leftFlame.readFlame() <= threshhold){
             // flame detected on left!
-            nav.halt();
+                        nav.halt();
             delay(1500);
             nav.turnLeft();
             myFan.TurnOn(Fan::MED_SPEED);
             delay(3000);
             myFan.TurnOff();
             myFan.Shutdown();
-            myMotors.OLTurnRight90();
+            nav.turnRight();
             checkForFlame = false;
+            doRotation = true;
+            delay(5000);
         }
         else if(rightFlame.readFlame() <= threshhold){
+            // flame detected on right!
             // flame detected on right!
             nav.halt();
             delay(1500);
@@ -72,8 +57,17 @@ void loop() {
             delay(3000);
             myFan.TurnOff();
             myFan.Shutdown();
-            myMotors.OLTurnLeft90();
+            nav.turnLeft();
             checkForFlame = false;
+            doRotation = true;
+            delay(5000);
         } 
+    }
+    else if (doRotation){
+            nav.goForward(30);
+            nav.turnLeft();
+            nav.turnRight();
+            nav.goReverse(30);
+            doRotation = false;
     }
 }
