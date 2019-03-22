@@ -17,17 +17,15 @@ public:
         PERCENT_20 = 0x10,
         PERCENT_100= 0x11
     };
-    Colour(int S0, int S1, int S2, int S3, int OUT,  int capacity, Frequency frequency = PERCENT_20);
+    Colour(int S0, int S1, int S2, int S3, int OUT,  int capacity);
     void InitColour();
-    ColourType ReadColour(int delay_time = 100);
-
+    ColourType ReadColour();
 
 private:
     int _S0, _S1, _S2, _S3, _OUT;
-    Frequency _frequency;
-    RollingAverage<int> raR_;
-    RollingAverage<int> raG_;
-    RollingAverage<int> raB_;
+    RollingAverage<uint16_t> raR_;
+    RollingAverage<uint16_t> raG_;
+    RollingAverage<uint16_t> raB_;
 };
 
 #endif // COLOUR_H
