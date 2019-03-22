@@ -3,13 +3,15 @@
 
 #include <stdio.h> // Not sure if this is needed.
 #include <StackArray.h>
-#include <Colour.h>
 #include <QueueArray.h>
 #include <Flame.h>
 #include <Ultrasonic.h>
 #include <Colour.h>
 #include <Gravity.h>
 #include <Beacon.h>
+#include <Navigator.h>
+#include <Fan.h>
+#include <Wire.h>
 
 const int MAP_WIDTH = 6;
 const int MAP_HEIGHT = 6;
@@ -31,7 +33,7 @@ const int HOUSE_PROXIMITY = 5; // cm
 const int NEGATIVE_HOUSE_PROXIMITY = 5; // cm
 const int STANDARD_TARGET_ANGLE = 90; // deg
 
-const int FIRE_FIGHTING_TIME = 200;
+const int FIRE_FIGHTING_TIME = 2000;
 const int SONIC_TOL = 10;
 const int FRONT_TOL = 10;
 
@@ -122,12 +124,11 @@ class Robot {
     Ultrasonic leftUltra;
     Ultrasonic rightUltra;
     Colour colo;
-
-    // Gravity grav;
+    Gravity grav;
 
     Beacon beac;
-    // navigator
-    // fan
+    Navigator nav;
+    Fan fan;
 
     bool foodFound;
 
@@ -141,20 +142,12 @@ class Robot {
     bool surveyBEnabled;
 
     // Initialization
-    void initializeGrid();
-    void initializeFireFighter();
-    void shutDownFireFighter();
-    void initializeLidar();
-    void initializeColour();
-    void initializeLED();
-
     void detectFood();
 
     // navigator placeholders ->
-    void initializeNavigator();
     void haltNav();
-    void navGoForward();
-    void navGoReverse();
+    void navGoForward(int dist);
+    void navGoReverse(int dist);
     void navTurnLeft();
     void navTurnRight();
 
@@ -178,7 +171,6 @@ class Robot {
     // Points of Interest (only relevant during survey mode really)
     void locatePOI();
     void computeNextPOIGoal();
-    bool checkedForObjectInFront;
 
     // Missions
     bool isFireAlive;
@@ -187,23 +179,16 @@ class Robot {
     void inidicateRedHouse();
     void indiciateYellowHouse();
 
-    // Movement ---- IMPLEMENT THESE!
-    void setInitialDistFromStopPos();
-    void setTargetDistToGoal();
-
     // Grid
     bool isOnRow(int y);
 
     // Sensors
     void updateCurrentPosition();
-    bool findObjectRight(int *tiles);
-    bool findObjectLeft(int *tiles);
     void emptyGoals();
 
     void neighbours(StackArray<Coordinate> *n, int x, int y);
 
     // Distances
-    int numTilesAway(int distance);
     int turnCost(Coordinate currParent, Coordinate curr, Coordinate nxt);
     Direction dirFromParent(Coordinate parent, Coordinate current);
     int tileCost(Tile t);

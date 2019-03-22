@@ -20,10 +20,12 @@ beac(redPin, greenPin, bluePin)
 }
 
 void Robot::initializeSensors() {
-    initializeFireFighter();
-    initializeLidar();
-    initializeColour();
-    initializeNavigator();
+    Wire.begin();
+    grav.Init();
+    nav.begin();
+    colo.InitColour();
+    beac.InitLED();
+    //fan.Setup();
 }
 
 void Robot::go() {
@@ -89,16 +91,6 @@ void Robot::printState() {
     // Serial.println("----- END STATE ---- ");
 }
 
-void Robot::initializeLidar() {}
-
-void Robot::initializeFireFighter() {}
-
-void Robot::shutDownFireFighter() {}
-
-void Robot::initializeColour() {}
-
-void Robot::initializeNavigator() {}
-
 void Robot::haltNav() {
     return;
 }
@@ -107,7 +99,7 @@ void Robot::pathPlanSurveyAStateSpecial() {
     while(!isOnRow(1)) {
         haltNav();
         if(!isOnRow(5)) locatePOI();
-        navGoForward(); // go 30;
+        navGoForward(30); // go 30;
 
         pos.y = pos.y - 1;
     }
@@ -157,6 +149,7 @@ void Robot::computeNextPOIGoal() {
 }
 
 void Robot::pathPlanState() {
+    delay(1000);
     haltNav();
 
     if(prevSt == STRAIGHT && isAtLastGoal()) {
@@ -192,7 +185,6 @@ void Robot::pathPlanState() {
         bool turnaz = changedStateToTurnTowardsCoordinate(goals.peek());
 
         if(!turnaz) {
-            setTargetDistToGoal();
             st = STRAIGHT;
         }
     }
@@ -228,9 +220,16 @@ void Robot::printGoals() {
 }
 
 void Robot::detectFood() {
-    if(pos.x == 2 && pos.y == 4) {
-        //Serial.print("FOUND FOOOOOOD");
-        foodFound = true;
+    // if(pos.x == 2 && pos.y == 4) {
+    //     //Serial.print("FOUND FOOOOOOD");
+    //     foodFound = true;
+    // }
+
+    foodFound = nav.detectedMagnet();
+    if(foodFound) {
+        beac.SetColor(Beacon::Color::GREEN);
+        delay(5000);
+        beac.Off();
     }
 }
 
@@ -240,16 +239,14 @@ void Robot::houseState() {
     if(!changedStateToTurnTowardsCoordinate(housePsoi.peek())) {
         housesVisited += 1;
 
-        //Serial.println("IM IN THE HOUSEEEEEEE");
+        //targetDistToGoal = ceil(grav.GetDistance() - 50)/10;
 
-        // targetDistToGoal = gravity.reading - HOUSE_PROXIMITY <---- main
-        targetDistToGoal = HOUSE_PROXIMITY;
-        navGoForward();
+        targetDistToGoal = 3;
+        navGoForward(targetDistToGoal);
 
-        identifyHouse() == Colour::RED ? inidicateRedHouse() : indiciateYellowHouse();
+        identifyHouse() == Colour::ColourType::RED ? inidicateRedHouse() : indiciateYellowHouse();
 
-        targetDistToGoal = HOUSE_PROXIMITY; // targetDistToGoal = gravity.reading - HOUSE_PROXIMITY <---- main
-        navGoReverse();
+        navGoReverse(targetDistToGoal);
 
         computeNextPOIGoal();
         st = PATH_PLAN;
@@ -259,7 +256,16 @@ void Robot::houseState() {
 }
 
 void Robot::straightState() {
-    navGoForward();
+    Coordinate c{goals.peek().x, goals.peek().y};
+    int nTilesAway;
+
+    if(!(c.x == pos.x)) {
+        nTilesAway = abs(c.x - pos.x);
+    } else {
+        nTilesAway = abs(c.y - pos.y);
+    }
+
+    navGoForward(30*nTilesAway);
 
     st = prevSt;
     prevSt = STRAIGHT;
@@ -402,11 +408,10 @@ void Robot::locatePOI() {
 }
 
 void Robot::putOutFire() {
-    // fan.TurnOn();
+    //fan.TurnOn(Fan::MED_SPEED);
     delay(FIRE_FIGHTING_TIME);
-
-    // fan.TurnOff();
-    // fan.Shutdown();
+    //fan.TurnOff();
+    //fan.Shutdown();
 
     isFireAlive = false;
 }
@@ -417,10 +422,14 @@ Colour::ColourType Robot::identifyHouse() {
 
 void Robot::inidicateRedHouse() {
     beac.SetColor(Beacon::Color::RED);
+    delay(3000);
+    beac.Off();
 }
 
 void Robot::indiciateYellowHouse() {
     beac.SetColor(Beacon::Color::BLUE);
+    delay(3000);
+    beac.Off();
 }
 
 void Robot::computeNextSurveyAGoal() {
@@ -572,25 +581,20 @@ int Robot::tileCost(Tile t) {
     return 1;
 }
 
-void Robot::setTargetDistToGoal() {
-
-    return;
+void Robot::navGoReverse(int dist) {
+    nav.goReverse(dist);
 }
 
-void Robot::navGoReverse() {
-    return;
-}
-
-void Robot::navGoForward() {
-    return;
+void Robot::navGoForward(int dist) {
+    nav.goForward(dist);
 }
 
 void Robot::navTurnLeft() {
-    return;
+    nav.turnLeft();
 }
 
 void Robot::navTurnRight() {
-    return;
+    nav.turnRight();
 }
 
 void Robot::emptyGoals() {
