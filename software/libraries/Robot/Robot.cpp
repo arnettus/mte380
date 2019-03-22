@@ -32,11 +32,6 @@ Robot::Robot(
     yellowHouseLed(yellowHouseLed)
 {
     goals.push(pos);
-
-    // flags
-
-    // do this every time you do a suveyModeShift, record and pathplan again if so
-    checkedForObjectInFront = false;
 }
 
 void Robot::initializeSensors() {
@@ -47,6 +42,28 @@ void Robot::initializeSensors() {
 }
 
 void Robot::go() {
+    // special initial case
+    int tiles;
+    bool objectThere = findObject(&tiles); // on right side
+
+    if(objectThere) {
+        grid[pos.y-tiles][pos.x] = MISSION;
+        psoi.push(Coordinate{pos.x, pos.y-tiles});
+
+        if(flameRight.isFlameInSight()) {
+            navTurnRight();
+            putOutFire();
+
+            // The poi was a candle.
+            grid[pos.y-tiles][pos.x] = CANDLE;
+            psoi.pop();
+        }
+    }
+
+    if(!(dir == North)) {
+        navTurnRight();
+    }
+
     while(st != DONE) {
         switch (st) {
             case PATH_PLAN_SURVEY_A:
@@ -73,7 +90,10 @@ void Robot::go() {
         }
     }
 
+    // you're done, blink some LED or something
 
+    // simulation:
+    // Serial.print
 }
 
 void Robot::initializeLidar() {}
@@ -91,11 +111,8 @@ void Robot::initializeNavigator() {}
 
 void Robot::haltNav() {}
 
-Direction Robot::navGetCurrentDirection() {}
-
 void Robot::pathPlanSurveyAState() {
     haltNav();
-    updateCurrentPosition(); // be cautious where you put this
 
     if(goals.isEmpty()) {
         if(isOnRow(LAST_ROW)) {
@@ -120,7 +137,7 @@ void Robot::pathPlanSurveyAState() {
             computeNextSurveyAGoal(); // your map might have something new now.
         }
 
-        if(!changedStateToTurnTowardsNextGoal()) {
+        if(!changedStateToTurnTowardsCoordinate(goals.peek())) {
             setTargetDistToGoal();
             st = STRAIGHT;
         }
@@ -134,13 +151,15 @@ void Robot::pathPlanState() {
 
     if(prevSt == STRAIGHT && isAtLastGoal()) {
         removeGoal();
-        removePOI();
 
         if(housesVisited == 2) st = DONE;
         else st = HOUSE;
+
+        removePOI();
     } else {
-        removeGoal();
-        if(!changedStateToTurnTowardsNextGoal()) {
+        if(isAtGoal()) removeGoal();
+
+        if(!changedStateToTurnTowardsCoordinate(goals.peek())) {
             setTargetDistToGoal();
             st = STRAIGHT;
         }
@@ -152,18 +171,24 @@ void Robot::pathPlanState() {
 void Robot::houseState() {
     haltNav();
 
-    // go forward
-    // targetDistToGoal = gravity.reading - HOUSE_PROXIMITY <---- main
-    targetDistToGoal = HOUSE_PROXIMITY;
-    navGoForward();
+    if(prevSt == PATH_PLAN){
+        housesVisited += 1;
+    }
 
-    identifyHouse() == Colour::RED ? inidicateRedHouse() : indiciateYellowHouse();
+    if(!changedStateToTurnTowardsCoordinate(psoi.peek())) {
+        // targetDistToGoal = gravity.reading - HOUSE_PROXIMITY <---- main
+        targetDistToGoal = HOUSE_PROXIMITY;
+        navGoForward();
 
-    targetDistToGoal = HOUSE_PROXIMITY; // targetDistToGoal = gravity.reading - HOUSE_PROXIMITY <---- main
-    navGoReverse();
+        identifyHouse() == Colour::RED ? inidicateRedHouse() : indiciateYellowHouse();
 
-    computeNextPOIGoal();
-    st = PATH_PLAN;
+        targetDistToGoal = HOUSE_PROXIMITY; // targetDistToGoal = gravity.reading - HOUSE_PROXIMITY <---- main
+        navGoReverse();
+
+        computeNextPOIGoal();
+        st = PATH_PLAN;
+    }
+
     prevSt = HOUSE;
 }
 
@@ -178,6 +203,7 @@ void Robot::straightState() {
 void Robot::turnLeftState() {
     navTurnLeft();
 
+    dir = static_cast<Direction>(static_cast<int>(dir) - 90);
     st = prevSt;
     prevSt = TURN_LEFT;
 }
@@ -185,6 +211,7 @@ void Robot::turnLeftState() {
 void Robot::turnRightState() {
     navTurnRight();
 
+    dir = static_cast<Direction>(static_cast<int>(dir) + 90);
     st = prevSt;
     prevSt = TURN_RIGHT;
 }
@@ -214,10 +241,10 @@ bool Robot::isOnRow(int y) {
     return pos.y == y;
 }
 
-bool Robot::changedStateToTurnTowardsNextGoal() {
-    Coordinate nextGoal{goals.peek()};
+bool Robot::changedStateToTurnTowardsCoordinate(Coordinate c) {
+    Coordinate nextGoal{c};
     bool turned = false;
-    Direction ori = navGetCurrentDirection();
+    Direction ori = dir;
 
     if(nextGoal.x > pos.x) {
         if(ori != East) {
@@ -258,16 +285,6 @@ void Robot::updateCurrentPosition() {
 }
 
 void Robot::locatePOI() {
-    if(!checkedForObjectInFront) {
-        checkedForObjectInFront = true;
-        int distFront = distanceInFront();
-
-        if(distFront + FRONT_TOL < expectedDistanceInFront()) {
-            int yTilesAway = numTilesAway(distFront);
-            grid[pos.y-yTilesAway][pos.x] = MISSION;
-        }
-    }
-
     long leftSonicReading = leftSonic.ReadAverageDistance(100);
     long rightSonicReading = rightSonic.ReadAverageDistance(100);
 
@@ -310,24 +327,9 @@ void Robot::locatePOI() {
     }
 }
 
-int Robot::distanceInFront() {
-    int dist = lidar.getDistance();
-}
-
-int Robot::expectedDistanceInFront() {
-    return pos.y*TILE_LENGTH;
-}
-
-int Robot::expectedDistanceOnRight() {
-    return (MAP_WIDTH-pos.x-1)*TILE_WIDTH;
-}
-
-int Robot::expectedDistanceOnLeft() {
-    return (pos.x)*TILE_WIDTH;
-}
-
-int Robot::numTilesAway(int distance) {
-    return distance/30 + 1;
+bool Robot::findObject(int *tiles) {
+    *tiles = 5;
+    return true;
 }
 
 void Robot::putOutFire() {
@@ -506,8 +508,7 @@ int Robot::turnCost(Coordinate currParent, Coordinate curr, Coordinate nxt) {
     Direction o;
 
     if(currParent.x == curr.x && currParent.y == curr.y) {
-        //orientation = navGetCurrentDirection();
-        o = North;
+        o = dir;
     } else {
         o = dirFromParent(currParent, curr);
     }
