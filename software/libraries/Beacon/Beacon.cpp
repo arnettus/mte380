@@ -39,6 +39,9 @@ void Beacon::InitLED()
 	pinMode(redPin_, OUTPUT);
 	pinMode(greenPin_, OUTPUT);
 	pinMode(bluePin_, OUTPUT);
+	digitalWrite(redPin_, HIGH);
+	digitalWrite(greenPin_, HIGH);
+	digitalWrite(bluePin_, HIGH);
 }
 
 void Beacon::Off()

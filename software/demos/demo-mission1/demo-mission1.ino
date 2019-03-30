@@ -62,6 +62,6 @@ void loop() {
             myFan.Shutdown();
             myMotors.OLTurnLeft90();
             checkForFlame = false;
-        } 
+        }
     }
 }

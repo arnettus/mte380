@@ -5,7 +5,7 @@ const float ENC1_TO_DIST = 2000 / 28.3;
 
 const unsigned long TURN_TIMEOUT_MS = 1400;
 
-const float MAGNET_DETECTED_MAGNITUDE = 80;
+const float MAGNET_DETECTED_MAGNITUDE = 40;
 const float MAGNET_DETECTED_X = 40;
 const float MAGNET_DETECTED_Y = 40;
 const float MAGNET_DETECTED_Z = 40;

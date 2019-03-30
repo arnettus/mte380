@@ -1,7 +1,7 @@
 #include "Flame.h"
 #include <Arduino.h>
 
-const int IN_RANGE = 1000;
+const int IN_RANGE = 970;
 
 Flame::Flame(int _pin) : pin(_pin) {}
 

@@ -3,12 +3,15 @@
 
 #include <stdio.h> // Not sure if this is needed.
 #include <StackArray.h>
-#include <TFLidar.h>
+#include <QueueArray.h>
 #include <Flame.h>
 #include <Ultrasonic.h>
 #include <Colour.h>
 #include <Gravity.h>
-#include <QueueArray.h>
+#include <Beacon.h>
+#include <Navigator.h>
+#include <Fan.h>
+#include <Wire.h>
 
 const int MAP_WIDTH = 6;
 const int MAP_HEIGHT = 6;
@@ -30,16 +33,16 @@ const int HOUSE_PROXIMITY = 5; // cm
 const int NEGATIVE_HOUSE_PROXIMITY = 5; // cm
 const int STANDARD_TARGET_ANGLE = 90; // deg
 
-const int FIRE_FIGHTING_TIME = 200;
+const int FIRE_FIGHTING_TIME = 2000;
 const int SONIC_TOL = 10;
 const int FRONT_TOL = 10;
 
 enum Direction {
-    North,
-    East,
-    South,
-    West,
-    Nothing
+    North = 0,
+    East = 90,
+    South = 180,
+    West = 270,
+    Nothing = 999
 };
 
 struct Coordinate{
@@ -49,24 +52,14 @@ struct Coordinate{
 
 class Robot {
   public:
-    Robot(
-        int lidarCapacity,
-        int leftFlameSensorPin,
-        int rightFlameSensoPin,
-        int fanPin,
-        int rightSonicTrigPin,
-        int rightSonicEchoPin,
-        int leftSonicTrigPin,
-        int leftSonicEchoPin,
-        int cS0,
-        int cS1,
-        int cS2,
-        int cS3,
-        int cOUT,
-        int cLEDPin,
-        int redHouseLed,
-        int yellowHouseLed
+    Robot(int leftFlamePin, int rightFlamePin,
+    int leftTrigPinUltra, int leftEchoPinUltra,
+    int rightTrigPinUltra, int rightEchoPinUltra,
+    int S0, int S1, int S2, int S3, int OUT,  int capacity,
+    int redPin, int greenPin, int bluePin
     );
+
+    void pathPlan(StackArray<Coordinate> *path, Coordinate e);
 
     enum Tile {
         FLAT,
@@ -77,12 +70,25 @@ class Robot {
         CANDLE,
     };
 
-    Tile grid[MAP_WIDTH][MAP_HEIGHT];
+    Tile grid[MAP_WIDTH][MAP_HEIGHT] = {
+        {FLAT, FLAT, FLAT, WATER , FLAT, FLAT},
+        {FLAT, GRAVEL, FLAT, FLAT, SAND, FLAT},
+        {WATER ,FLAT, FLAT, FLAT, FLAT, FLAT},
+        {FLAT, FLAT, FLAT, SAND, FLAT, GRAVEL},
+        {FLAT, SAND, FLAT, FLAT, WATER , FLAT},
+        {FLAT, FLAT, GRAVEL, FLAT, FLAT, FLAT}
+    };
 
     void initializeSensors();
     void go();
 
   private:
+
+    void printState();
+    void printGoals();
+
+    int numTimesCalledLocatePoi;
+    void Robot::pathPlanSurveyAStateSpecial();
 
     enum State {
         PATH_PLAN_SURVEY_A,
@@ -96,85 +102,75 @@ class Robot {
     };
 
     struct Node {
-        Coordinate self;
         Coordinate parent;
         bool seen = false;
         int cost = 0;
     };
 
     // Sensors
-    TFLidar lidar;
-    Flame flameLeft;
-    Flame flameRight;
-    Ultrasonic rightSonic;
-    Ultrasonic leftSonic;
-    Colour colourSensor;
-
     Coordinate pos;
+    Direction dir;
     State st;
     State bufSt;
     State prevSt;
 
     StackArray<Coordinate> goals;
     StackArray<Coordinate> psoi;
+    StackArray<Coordinate> housePsoi;
+    StackArray<Coordinate> foodpsoi;
 
-    int initialDistFromStopPos;
-    int tilesPrevAdvanced;
-    int distTravelled;
+    Flame leftFlame;
+    Flame rightFlame;
+    Ultrasonic leftUltra;
+    Ultrasonic rightUltra;
+    Colour colo;
+    Gravity grav;
+
+    Beacon beac;
+    Navigator nav;
+    Fan fan;
+
+    bool foodFound;
+
     int targetDistToGoal;
+    int housesVisited;
 
     int cLEDPin;
     int redHouseLed;
     int yellowHouseLed;
 
     bool surveyBEnabled;
-    bool missionCompleted;
-    bool reverse;
 
     // Initialization
-    void initializeGrid();
-    void initializeFireFighter();
-    void shutDownFireFighter();
-    void initializeLidar();
-    void initializeColour();
-    void initializeLED();
+    void detectFood();
 
     // navigator placeholders ->
-    void initializeNavigator();
     void haltNav();
-    void navGoForward();
-    void navGoReverse();
+    void navGoForward(int dist);
+    void navGoReverse(int dist);
     void navTurnLeft();
     void navTurnRight();
-    Direction navGetCurrentDirection();
 
     // State functions
-    void pathPlanSurveyAState();
-    void pathPlanSurveyBState();
     void pathPlanState();
-    StackArray<Coordinate> pathPlan(Coordinate e);
     void straightState();
     void houseState();
     void turnLeftState();
     void turnRightState();
 
     // Path planning
-    StackArray<Coordinate> planPath(Coordinate b, Coordinate e);
+    int heuristic(Coordinate a, Coordinate b);
 
     // Goals
     void turnTowardsNextGoal();
-    void removeGoal();
-    void removePOI();
     void computeNextSurveyAGoal();
-    void emptyGoals();
     bool isAtGoal();
     bool isAtLastGoal();
-    bool changedStateToTurnTowardsNextGoal();
+    bool changedStateToTurnTowardsCoordinate(Coordinate c);
 
     // Points of Interest (only relevant during survey mode really)
     void locatePOI();
     void computeNextPOIGoal();
-    bool checkedForObjectInFront;
 
     // Missions
     bool isFireAlive;
@@ -183,25 +179,17 @@ class Robot {
     void inidicateRedHouse();
     void indiciateYellowHouse();
 
-    // Movement ---- IMPLEMENT THESE!
-    void setInitialDistFromStopPos();
-    void setTargetDistToGoal();
-
     // Grid
     bool isOnRow(int y);
 
     // Sensors
     void updateCurrentPosition();
-    void detectAdjTiles();
-    int distanceInFront();
-    int expectedDistanceInFront();
-    int expectedDistanceOnRight();
-    int expectedDistanceOnLeft();
+    void emptyGoals();
+
+    void neighbours(StackArray<Coordinate> *n, int x, int y);
 
     // Distances
-    int numTilesAway(int distance);
-    Coordinate findValidSurveyGoal(Coordinate oneAbove);
-    int turnCost(bool *firstNodeCase, Coordinate currParent, Coordinate curr, Coordinate nxt);
+    int turnCost(Coordinate currParent, Coordinate curr, Coordinate nxt);
     Direction dirFromParent(Coordinate parent, Coordinate current);
     int tileCost(Tile t);
 };
